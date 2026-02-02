@@ -1,9 +1,9 @@
 /**
- * SRT 字幕生成器
- * 将 AI 分析结果转换为 SRT 格式
+ * SRT 字幕生成器 v2
+ * 支持风格参数
  */
 
-import { AnalysisResult } from '@/types';
+import { AnalysisResult, StyleType } from '@/types';
 
 /**
  * SRT 字幕条目
@@ -16,42 +16,39 @@ interface SRTEntry {
 }
 
 /**
- * 秒数转换为 SRT 时间格式
- * @param seconds 秒数
- * @param includeMs 是否包含毫秒部分
- */
-export function formatSRTTime(seconds: number, includeMs: boolean = false): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
-
-  const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  
-  return includeMs ? `${timeStr},${String(ms).padStart(3, '0')}` : timeStr;
-}
-
-/**
  * 将时间戳转换为 SRT 时间格式
  */
 export function timestampToSRT(timestamp: string): string {
-  // 解析时间戳格式 HH:MM:SS 或 HH:MM
   const parts = timestamp.split(':');
   const hours = parseInt(parts[0] || '0');
   const minutes = parseInt(parts[1] || '0');
   const seconds = parseInt(parts[2]?.split('.')[0] || '0');
 
-  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-  
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;  
   return formatSRTTime(totalSeconds, false);
+}
+
+/**
+ * 根据风格调整句子（可选）
+ * 这里可以添加风格特定的后处理逻辑
+ */
+function adjustSentenceByStyle(sentence: string, style: StyleType): string {
+  // 当前版本不需要调整，AI 已经根据风格生成了
+  // 未来可以添加：
+  // - 日常口语：简化句子
+  // - 入门风格：确保使用简单词汇
+  // - 文学风格：增强文学表达
+  
+  return sentence;
 }
 
 /**
  * 将分析结果转换为 SRT 格式
  * @param result AI 分析结果
  * @param frameDuration 每帧的时长（秒）
+ * @param style 字幕风格（可选）
  */
-export function resultToSRT(result: AnalysisResult, frameDuration: number = 2.0): string {
+export function resultToSRT(result: AnalysisResult, frameDuration: number = 2.0, style?: StyleType): string {
   if (!result || !result.video_narrative) {
     return '';
   }
@@ -63,13 +60,16 @@ export function resultToSRT(result: AnalysisResult, frameDuration: number = 2.0)
     const id = index + 1;
     const startTime = entry.timestamp;
     
+    // 根据风格调整句子
+    const adjustedSentence = adjustSentenceByStyle(entry.sentence, style || 'casual');
+    
     // 计算结束时间（当前帧开始时间 + 帧时长）
     const startSeconds = timestampToSeconds(startTime);
     const endSeconds = startSeconds + frameDuration;
     const endTime = formatSRTTime(endSeconds, false);
 
     // 清理句子文本（移除多余的引号）
-    const text = entry.sentence
+    const text = adjustedSentence
       .replace(/^"(.*)"$/, '$1')  // 移除开头和结尾的引号
       .replace(/"/g, '""')  // 内部引号转义
       .trim();
@@ -81,18 +81,6 @@ export function resultToSRT(result: AnalysisResult, frameDuration: number = 2.0)
   });
 
   return srtContent;
-}
-
-/**
- * 将时间戳 HH:MM:SS 转换为秒数
- */
-function timestampToSeconds(timestamp: string): number {
-  const parts = timestamp.split(':');
-  const hours = parseInt(parts[0] || '0');
-  const minutes = parseInt(parts[1] || '0');
-  const seconds = parseInt(parts[2]?.split('.')[0] || '0');
-
-  return hours * 3600 + minutes * 60 + seconds;
 }
 
 /**
@@ -193,14 +181,12 @@ function srtTimeToSeconds(timeStr: string): number {
   const match = timeStr.match(/^(\d+):(\d+):(\d+)(,(\d+))?$/);
   if (!match) return 0;
 
-  const [, hours, minutes, seconds, ms] = match;
-  
+  const [, hours, minutes, seconds, ms] = match;  
   const totalSeconds = 
     parseInt(hours) * 3600 +
     parseInt(minutes) * 60 +
     parseInt(seconds) +
-    (ms ? parseInt(ms) / 1000 : 0);
-  
+    (ms ? parseInt(ms) / 1000 : 0);  
   return totalSeconds;
 }
 
@@ -233,4 +219,19 @@ export function calculateSRTProgress(
   const progress = ((currentTime - entry.startTime) / duration) * 100;
 
   return Math.max(0, Math.min(100, progress));
+}
+
+/**
+ * 格式化秒数为 SRT 时间格式
+ * @param seconds 秒数
+ * @param includeMs 是否包含毫秒部分
+ */
+function formatSRTTime(seconds: number, includeMs: boolean = false): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  const ms = Math.floor((seconds % 1) * 1000);
+
+  const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;  
+  return includeMs ? `${timeStr},${String(ms).padStart(3, '0')}` : timeStr;
 }

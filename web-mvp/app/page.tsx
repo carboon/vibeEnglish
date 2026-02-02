@@ -8,11 +8,11 @@ import {
 } from '@/lib/video';
 import { 
   generateSRTBlob, 
-  downloadSRT,
-  resultToSRT 
+  downloadSRT 
 } from '@/lib/srt';
 import VideoPlayer from './components/VideoPlayer';
 import WordExplanation from './components/WordExplanation';
+import { StyleType, STYLE_CONFIGS } from '@/lib/prompts';
 
 export default function Home() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
@@ -25,6 +25,7 @@ export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [showWordExplanation, setShowWordExplanation] = useState(false);
   const [selectedVocabulary, setSelectedVocabulary] = useState<Vocabulary | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<StyleType>('casual');
   const [useSlidingWindow, setUseSlidingWindow] = useState(true);
   const [extractedFrames, setExtractedFrames] = useState<VideoFrame[]>([]);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -33,7 +34,12 @@ export default function Home() {
 
   const videoProcessorRef = useRef<VideoProcessor | null>(null);
 
-  // 初始化视频处理器
+  const styles = [
+    { id: 'casual', ...STYLE_CONFIGS['casual'] },
+    { id: 'beginner', ...STYLE_CONFIGS['beginner'] },
+    { id: 'literary', ...STYLE_CONFIGS['literary'] }
+  ];
+
   useEffect(() => {
     videoProcessorRef.current = new VideoProcessor();
     return () => {
@@ -57,7 +63,6 @@ export default function Home() {
     }
   }, []);
 
-  // 处理视频
   const processVideo = async () => {
     if (!videoFile || !videoProcessorRef.current) {
       setProcessingProgress({
@@ -72,7 +77,6 @@ export default function Home() {
     try {
       console.log('🎬 Starting video processing...');
       
-      // 步骤 1: 提取帧
       setProcessingProgress({
         status: 'extracting',
         current: 0,
@@ -82,7 +86,7 @@ export default function Home() {
 
       const { frames, duration } = await videoProcessorRef.current.extractFrames(
         videoFile,
-        10 // 默认提取 10 帧
+        10
       );
 
       setExtractedFrames(frames);
@@ -90,15 +94,13 @@ export default function Home() {
 
       console.log(`✅ Extracted ${frames.length} frames, duration: ${duration}s`);
 
-      // 步骤 2: 调用 AI 分析
       setProcessingProgress({
         status: 'analyzing',
         current: 0,
         total: frames.length,
-        message: 'Analyzing frames with AI...'
+        message: `Analyzing frames with ${selectedStyle} style...`
       });
 
-      // 转换帧为 base64
       const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
       
       const response = await fetch('/api/analyze', {
@@ -108,7 +110,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           frames: framesBase64,
-          useSlidingWindow
+          useSlidingWindow,
+          style: selectedStyle
         })
       });
 
@@ -121,7 +124,6 @@ export default function Home() {
       if (data.success && data.data) {
         console.log('✅ Analysis complete');
         
-        // 生成 SRT
         const frameDuration = frames.length > 0 ? duration / frames.length : 0;
         const srtContent = resultToSRT(data.data, frameDuration);
         setSrtContent(srtContent);
@@ -131,7 +133,7 @@ export default function Home() {
           status: 'complete',
           current: frames.length,
           total: frames.length,
-          message: `Analysis complete! Mode: ${data.data.mode || 'normal'}`
+          message: `Analysis complete! Style: ${selectedStyle}`
         });
       } else {
         throw new Error(data.error || 'Analysis failed');
@@ -215,7 +217,6 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="container mx-auto px-4 py-8">
-          {/* Header */}
           <header className="text-center mb-8">
             <h1 className="text-5xl font-bold text-indigo-900 mb-4">
               🎬 VibeEnglish
@@ -223,29 +224,15 @@ export default function Home() {
             <p className="text-xl text-gray-700">
               Learn English through Comprehensible Input from Videos
             </p>
-            <div className="flex items-center justify-center space-x-2 mt-4">
-              <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium">
-                Browser-Side Video Extraction
-              </span>
-              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                SRT Subtitles
-              </span>
-            </div>
           </header>
 
-          {/* Upload Section */}
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
               📤 Upload Video
             </h2>
 
             <div className="space-y-6">
-              {/* File Input */}
-              <div 
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
-                  videoFile ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400'
-                }`}
-              >
+              <div className="border-2 border-dashed rounded-xl p-8 text-center transition-colors">
                 <input
                   type="file"
                   id="video"
@@ -268,48 +255,61 @@ export default function Home() {
                 </label>
               </div>
 
-              {/* Settings */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                    🎨 Caption Style
+                  </h3>
+                  <div className="space-y-2">
+                    {styles.map(style => (
+                      <button
+                        key={style.id}
+                        onClick={() => setSelectedStyle(style.id as StyleType)}
+                        disabled={processingProgress.status !== 'idle'}
+                        className={`w-full p-3 rounded-lg text-left transition-all ${
+                          selectedStyle === style.id 
+                            ? 'bg-indigo-600 text-white ring-2 ring-indigo-300' 
+                            : 'bg-white text-gray-700 hover:bg-indigo-50 ring-2 ring-transparent'
+                        }`}
+                      >
+                        <div className="font-medium mb-1">{style.name}</div>
+                        <p className="text-xs text-gray-500">{style.description}</p>
+                        <p className="text-xs text-gray-400">Target: {style.targetAudience}</p>
+                        {selectedStyle === style.id && (
+                          <span className="inline-block ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            ✓ Selected
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                    🔗 Narrative Mode
+                  </h3>
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={useSlidingWindow}
                       onChange={(e) => setUseSlidingWindow(e.target.checked)}
-                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
                       disabled={processingProgress.status !== 'idle'}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
                     />
                     <span className="text-gray-700 font-medium">
-                      Use Sliding Window (Narrative Continuity) 📖
+                      Sliding Window (Narrative Continuity) 📖
                     </span>
                   </label>
-                  <div className="text-xs text-gray-400">
-                    Maintains story flow and consistent terminology across frames
-                  </div>
-                </div>
-                
-                {/* Settings */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">
-                      Extraction Method:
-                    </span>
-                    <select 
-                      className="border border-gray-300 rounded px-3 py-1 text-sm"
-                      disabled={processingProgress.status !== 'idle'}
-                      defaultValue="even"
-                    >
-                      <option value="even">Even Distribution (Recommended)</option>
-                      <option value="key">Key Frames (Scene Detection)</option>
-                    </select>
-                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Maintains story flow across frames
+                  </p>
                 </div>
               </div>
 
-              {/* Analyze Button */}
               <button
                 onClick={handleAnalyze}
-                disabled={!videoFile || processingProgress.status !== 'idle' || processingProgress.status === 'analyzing'}
+                disabled={!videoFile || processingProgress.status !== 'idle'}
                 className="w-full bg-indigo-600 text-white py-4 rounded-xl font-semibold text-lg
                          hover:bg-indigo-700 transition-colors disabled:bg-gray-400
                          disabled:cursor-not-allowed"
@@ -320,14 +320,12 @@ export default function Home() {
                     Analyzing... ({processingProgress.current}/{processingProgress.total})
                   </span>
                 ) : (
-                  <span>🚀 Start Analysis</span>
+                  <span>🚀 Start Analysis with {selectedStyle} Style</span>
                 )}
               </button>
 
-              {/* Progress */}
               {processingProgress.status !== 'idle' && (
                 <div className="bg-gray-50 rounded-xl p-6">
-                  {/* Status */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getStatusColor()}`}>
@@ -345,17 +343,7 @@ export default function Home() {
                       </span>
                     )}
                   </div>
-                    {processingProgress.status === 'complete' && srtContent && (
-                      <button
-                        onClick={handleDownloadSRT}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
-                      >
-                        📥 Download SRT
-                      </button>
-                    )}
-                  </div>
 
-                  {/* Progress Bar */}
                   {processingProgress.total > 0 && (
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
@@ -371,11 +359,10 @@ export default function Home() {
                     {processingProgress.message}
                   </p>
 
-                  {/* Details */}
                   {processingProgress.status === 'extracting' && extractedFrames.length > 0 && (
                     <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                       <p className="text-sm text-blue-800 mb-1">
-                        📸 Frames extracted: {extractedFrames.length}
+                        📹 Frames extracted: {extractedFrames.length}
                       </p>
                       <p className="text-sm text-blue-800 mb-1">
                         ⏱️  Video duration: {videoDuration.toFixed(1)}s
@@ -390,42 +377,44 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Results Section */}
           {analysisResult && analysisResult.video_narrative && (
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800">
                   📊 Analysis Results
                 </h2>
-                {analysisResult.mode && (
-                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                    Mode: {analysisResult.mode}
-                  </span>
-                )}
+                <div className="flex items-center space-x-4">
+                  {analysisResult.style && (
+                    <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                      Style: {analysisResult.style}
+                    </span>
+                  )}
+                  {analysisResult.mode && (
+                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                      Mode: {analysisResult.mode}
+                    </span>
+                  )}
+                  {srtContent && (
+                    <button
+                      onClick={handleDownloadSRT}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                    >
+                      📥 Download SRT
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left: Video Player */}
                 <div className="lg:col-span-2">
                   <VideoPlayer 
                     videoUrl={extractedFrames.length > 0 ? extractedFrames[0].imageUrl : null}
                     currentTime={0}
-                    onTimeUpdate={(time) => {
-                      // 同步字幕显示
-                      if (analysisResult.video_narrative && analysisResult.video_narrative.length > 0) {
-                        const frameIndex = Math.min(
-                          Math.floor(time / (videoDuration / extractedFrames.length)),
-                          analysisResult.video_narrative.length - 1
-                        );
-                        setCurrentSubtitleIndex(frameIndex);
-                      }
-                    }}
+                    srtContent={srtContent}
                   />
                 </div>
 
-                {/* Right: Analysis Results */}
                 <div className="lg:col-span-1 space-y-4">
-                  {/* Stats */}
                   <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-200">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
                       📈 Statistics
@@ -460,8 +449,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Narratives */}
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                  <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">
                       📝 Video Narrative
                     </h3>
@@ -496,7 +484,6 @@ export default function Home() {
                             )}
                           </div>
 
-                          {/* Context */}
                           {entry.context_continuity && (
                             <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
                               <p className="text-xs text-gray-600 mb-1">
@@ -508,19 +495,17 @@ export default function Home() {
                             </div>
                           )}
 
-                          {/* Sentence */}
                           <p className="text-lg text-gray-800 mb-3 leading-relaxed">
                             {entry.sentence}
                           </p>
 
-                          {/* Vocabulary */}
                           {entry.advanced_vocabulary && entry.advanced_vocabulary.length > 0 && (
                             <div>
                               <p className="text-sm font-semibold text-gray-600 mb-2">
                                 Advanced Vocabulary ({entry.vocabulary_count} words):
                               </p>
                               <div className="flex flex-wrap gap-2">
-                                {entry.advanced_vocabulary.slice(0, 8).map((vocab, vIndex) => (
+                                {entry.advanced_vocabulary.slice(0, 10).map((vocab, vIndex) => (
                                   <span
                                     key={vIndex}
                                     onClick={() => handleVocabularyClick(vocab)}
@@ -528,8 +513,8 @@ export default function Home() {
                                       vocab.level === 'C1/C2' 
                                           ? 'bg-red-100 text-red-800 hover:bg-red-200' 
                                           : vocab.level === 'B2'
-                                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                                          : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                              ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                                     }`}
                                     title={`${vocab.word} (${vocab.level})`}
                                   >
@@ -541,6 +526,11 @@ export default function Home() {
                                     </span>
                                   </span>
                                 ))}
+                                {entry.advanced_vocabulary.length > 10 && (
+                                  <span className="text-xs text-gray-500 italic">
+                                    +{entry.advanced_vocabulary.length - 10} more
+                                  </span>
+                                )}
                               </div>
                             </div>
                           )}
@@ -553,7 +543,6 @@ export default function Home() {
             </div>
           )}
 
-          {/* Word Explanation Modal */}
           {showWordExplanation && selectedVocabulary && (
             <WordExplanation
               vocabulary={selectedVocabulary}
