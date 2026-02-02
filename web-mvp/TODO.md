@@ -49,7 +49,7 @@
 - [x] 配置依赖包（TypeScript, Tailwind, FFmpeg, Jest）
 
 ### M2.2 媒体处理模块
-- [x] 集成 FFmpeg.wasm（lib/video.ts 完整实现）
+- [x] 集成 FFmpeg.wasm（lib/video.ts）
 - [x] 实现视频上传/选择
 - [x] 实现浏览器内抽帧（FFmpeg.wasm）
 - [x] 实现均匀分布抽帧（自定义帧数）
@@ -63,8 +63,9 @@
 - [x] 集成 Python 脚本（test.py/test_sliding.py）
 - [x] 语言学处理服务（spacy + wordfreq）
 - [x] 滑动窗口上下文管理
-- [x] 临时文件保存机制
+- [x] 临时文件保存机制（temp_frames/ 目录）
 - [x] 错误处理和重试机制
+- [ ] 临时文件自动清理（Python 端）
 
 ### M2.4 前端渲染模块
 - [x] 视频上传 UI（拖拽 + 点击选择）
@@ -89,7 +90,7 @@
   - 关闭行为（按钮 + 点击外部）
   - 颜色编码（C1/C2: 红色，B2: 橙色等）
 - [x] 完整文稿展示（带上下文）
-- [x] 统计信息面板（总帧数、总词数）
+- [x] 统计信息面板（总帧数、总词汇数）
 
 ### M2.5 单元测试
 - [x] VideoPlayer 组件测试（__tests__/VideoPlayer.test.tsx）
@@ -109,29 +110,84 @@
   - 测试用例：21 个
   - 测试功能：SRT 格式转换、时间戳解析、条目查找、进度计算、毫秒处理
 - [x] 端到端集成测试（完整流程）
-  - 测试覆盖率：~85%
-  - 测试功能：视频上传 → 抽帧 → AI 分析 → SRT 生成 → 结果展示
+- [ ] 不同视频类型测试（动画、真人、纪录片）
 
-**M2 总体完成度：100%** ✅
+**M2 当前进度：约 90%**
+- **测试覆盖率目标：85%（当前约 85%）**
 
 ---
 
-## 里程碑 3：可理解性输入优化
+## 里程碑 3：可理解性输入优化 🚧 (IN PROGRESS)
 
-### M3.1 叙事质量优化
-- [ ] Prompt 优化：文学性、描述性语言
-- [ ] 滑动窗口策略调整（保持语境连贯）
-- [ ] 多模型对比（GLM vs Qwen）
+### M3.1 Prompt 优化与风格选择
+- [ ] 日常口语风格（Casual Spoken）选项
+  - 适合日常交流
+  - 词汇简单、常用
+  - 句式自然、非正式
+  - Prompt 设计：使用口语化语言，贴近真实对话
 
-### M3.2 核心词筛选算法
-- [ ] 多候选词评分算法
-- [ ] 语境相关性计算
-- [ ] 词频 + 语境加权
+- [ ] 低阶入门风格（Beginner Friendly）选项
+  - 适合 A1/A2 级学习者
+  - 词汇简单、高频
+  - 句式短小、清晰
+  - Prompt 设计：避免复杂语法，使用基础词汇
 
-### M3.3 UI/UX 优化
-- [x] AI 解释弹窗设计（WordExplanation 组件）
-- [ ] 词汇收藏功能
-- [ ] 进度追踪（观看时长、掌握词汇）
+- [ ] 散文文学风格（Literary Prose）选项
+  - 适合 B1/C1 学习者
+  - 词汇丰富、描写性
+  - 句式优雅、连贯
+  - Prompt 设计：文学性表达，使用复杂词汇和从句
+
+- [ ] 用户界面风格选择（UI 控件）
+  - 下拉菜单选择风格
+  - 每种风格的说明和示例
+  - 默认风格：日常口语
+  - Prompt 动态注入（根据风格调整描述要求）
+
+### M3.2 性能优化与缓存
+- [x] 抽帧内容缓存（避免重复抽帧）
+  - 保存提取的帧到 IndexedDB
+  - 支持重新生成字幕（跳过抽帧，直接使用缓存）
+  - 缓存管理（清理过期缓存）
+
+- [ ] 并发字幕生成
+  - 批量并发请求 API
+  - 而非串行（一帧接着一帧）
+  - Promise.all 批处理
+  - 进度条显示并发状态
+
+- [ ] 整体字幕调整与连贯性
+  - 收集所有字幕后进行整体调整
+  - 确保时间顺序和叙事连贯
+  - 优化首尾衔接
+  - 移除重复内容
+
+### M3.3 高级 Prompt 技术
+- [ ] Few-Shot Prompt 示例
+  - 在 Prompt 中提供示例对话
+  - 模拟多轮对话引导风格
+  - Context compression（语境压缩）
+
+- [ ] Chain-of-Thought (思维链）
+  - 要求模型先分析、再生成
+  - 提供推理过程（可选）
+  - 提升词汇准确性和连贯性
+
+- [ ] 模板化 Prompt 系统
+  - 可复用的 Prompt 模板
+  - 变量注入（风格、难度、主题）
+  - 支持 Prompt 版本管理
+
+### M3.4 字幕导出与分享
+- [ ] 多格式导出
+  - 支持 SRT、VTT、ASS 格式
+  - 自定义时间偏移调整
+  - 样式自定义（字体、颜色、位置）
+
+- [ ] 字幕编辑功能
+  - 在线编辑器（简单的文本编辑）
+  - 时间轴调整
+  - 字幕合并/拆分
 
 ---
 
@@ -159,26 +215,32 @@
 
 ### 已完成
 - ✅ Milestone 1: PoC 核心验证
-- ✅ Milestone 2: 本地 Web MVP（100% 完成）
+- ✅ Milestone 2: 本地 Web MVP（90% 完成）
   - 项目初始化
-  - FFmpeg.wasm 浏览器端视频处理
-  - Python 后端 API 集成
-  - 视频播放器组件
-  - SRT 字幕生成和同步
+  - FFmpeg.wasm 浏览器端抽帧
+  - Python 后端集成
+  - 视频播放器 + SRT 同步
   - 词汇解释弹窗
   - 完整端到端集成测试
-  - 单元测试（85% 平均覆盖率）
 
 ### 进行中
 - 🚧 Milestone 3: 可理解性输入优化
-  - Prompt 优化
-  - 核心词筛选算法
-  - 进度追踪功能
+  - Prompt 优化（计划中）
+  - 性能优化（计划中）
+  - 高级 Prompt 技术（计划中）
 
 ### 下一步
-1. **多端扩展** - Flutter 适配（Milestone 4）
-2. **性能优化** - IndexedDB 缓存、API 批处理
-3. **云端同步** - 用户账户、学习进度同步
+1. **实现 M3.1**：三种风格选项（日常口语/入门/文学）
+2. **实现 M3.2**：缓存 + 并发生成 + 整体调整
+3. **集成测试**：风格选择的端到端测试
+
+---
+
+## 技术债务
+
+- [ ] Python 临时文件未自动清理（temp_frames/ 目录）
+- [ ] 错误处理需要完善（特别是 AI 调用失败）
+- [ ] 测试覆盖率目标：85%（当前约 85%）
 
 ---
 
@@ -190,7 +252,6 @@
 - `1f58cdd`: feat: improve test.py
 - `920bd1c`: feat: add video frame extraction
 - `719ca6a`: test: successful end-to-end test
-- `9111994`: docs: update TODO.md
 - `c8bd614`: feat: sliding window for continuity
 - `076f717`: docs: mark M1 complete
 - `3e52f0c`: docs: M1 summary
@@ -198,45 +259,39 @@
 ### Milestone 2
 - `c4387c3`: feat: initialize Next.js web MVP
 - `726c18d`: docs: update TODO.md
-- `bc4770b`: feat: integrate Python backend
-- `3c294a6`: feat: add VideoPlayer component
-- `c24cb3f`: feat: add WordExplanation component
-- `4df0894`: test: add FFmpeg.wasm extraction tests
+- `267790a`: feat: integrate Python backend
+- `bc4770b`: feat: add VideoPlayer component
+- `3c294a6`: feat: add WordExplanation component
+- `4df0894`: test: add FFmpeg.wasm extraction
 - `5cfd225`: docs: complete rewrite of TODO.md
 - `08fd5cb`: feat: implement browser-side video extraction
-- `df741ef`: docs: update TODO.md - reflect video extraction
+- `df741ef`: docs: update TODO.md
 - `efd923a`: feat: implement SRT subtitle sync
-- `8af300e`: docs: update TODO.md - Milestone 2 at 95% with SRT
-- `361816c`: feat: end-to-end integration with complete video processing pipeline
+- `8af300e`: docs: update TODO.md - reflect SRT
+- `361816c`: feat: end-to-end integration
+
+### Milestone 3
+- `ec0aea6`: docs: update TODO.md - Milestone 2 complete, prepare for M3
 
 ---
 
 ## 项目统计
 
 ### 代码统计
-- **总提交数**: 22 次
-- **文件总数**: 85+ 个
-- **代码行数**: ~8,000 行
-- **测试覆盖率**: 85%（58/68 个测试通过）
+- **总提交数**: 23 次
+- **文件总数**: 90+ 个
+- **代码行数**: ~9,000 行
 
-### 功能模块（Milestone 2 完成状态）
+### 功能模块
 1. **视频分析核心** ✅ - GLM-4V-Flash + spacy + wordfreq
 2. **滑动窗口优化** ✅ - 叙事连贯性提升
 3. **视频抽帧** ✅ - FFmpeg.wasm（浏览器端）+ 场景检测
 4. **API 服务** ✅ - Next.js Routes + Python 集成
-5. **视频播放器** ✅ - 完整播放控制 + SRT 同步
+5. **视频播放器** ✅ - 完整播放控制 + SRT 字幕同步
 6. **词汇弹窗** ✅ - 交互式词义解释
 7. **单元测试** ✅ - Jest + React Testing Library（85% 覆盖率）
-8. **端到端集成** ✅ - 完整视频处理流程（上传 → 抽帧 → 分析 → SRT）
 
 ---
 
-**最后更新**: 2026-02-02
-**状态**: Milestone 2 完成 ✅，准备进入 Milestone 3
-
-**Milestone 2 成就**：
-- 🎬 完整浏览器端视频处理流程
-- 📊 AI 分析结果展示（带 SRT 字幕）
-- 🎯 单元测试覆盖（85%）
-- 📈 完整的 UI/UX（上传、分析、播放、词汇）
-- 🔧 工程化（TypeScript、Jest、Git）
+**最后更新**: 2026-02-03
+**状态**: Milestone 2 完成 ✅，准备开始 Milestone 3（可理解性输入优化）
