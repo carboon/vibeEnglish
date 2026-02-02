@@ -1,301 +1,565 @@
 'use client';
 
-import { useState } from 'react';
-import { AnalysisProgress, AnalysisResult } from '@/types';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { AnalysisResult, Vocabulary } from '@/types';
+import { 
+  VideoProcessor, 
+  type VideoFrame 
+} from '@/lib/video';
+import { 
+  generateSRTBlob, 
+  downloadSRT,
+  resultToSRT 
+} from '@/lib/srt';
+import VideoPlayer from './components/VideoPlayer';
+import WordExplanation from './components/WordExplanation';
 
 export default function Home() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState<AnalysisProgress>({
-    status: 'idle',
-    currentFrame: 0,
-    totalFrames: 0,
+  const [processingProgress, setProcessingProgress] = useState({
+    status: 'idle' as 'idle' | 'uploading' | 'extracting' | 'analyzing' | 'complete' | 'error',
+    current: 0,
+    total: 0,
     message: 'Ready to analyze'
   });
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [showWordExplanation, setShowWordExplanation] = useState(false);
+  const [selectedVocabulary, setSelectedVocabulary] = useState<Vocabulary | null>(null);
   const [useSlidingWindow, setUseSlidingWindow] = useState(true);
+  const [extractedFrames, setExtractedFrames] = useState<VideoFrame[]>([]);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [srtContent, setSrtContent] = useState('');
+  const [currentSubtitleIndex, setCurrentSubtitleIndex] = useState(0);
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const videoProcessorRef = useRef<VideoProcessor | null>(null);
+
+  // 初始化视频处理器
+  useEffect(() => {
+    videoProcessorRef.current = new VideoProcessor();
+    return () => {
+      videoProcessorRef.current?.cleanup();
+    };
+  }, []);
+
+  const handleVideoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && file.type.startsWith('video/')) {
       setVideoFile(file);
-      setProgress({
-        status: 'idle',
-        currentFrame: 0,
-        totalFrames: 0,
-        message: `Loaded: ${file.name}`
+      setProcessingProgress({
+        status: 'uploading',
+        current: 0,
+        total: 0,
+        message: `Loading: ${file.name}`
       });
-      setResult(null); // 清除之前的结果
+      setAnalysisResult(null);
+      setExtractedFrames([]);
+      setSrtContent('');
     }
-  };
+  }, []);
 
-  const extractFramesFromVideo = async (videoFile: File): Promise<string[]> => {
-    // 模拟抽帧（实际会使用 FFmpeg.wasm）
-    // 这里暂时返回空数组，让后端 Python 脚本处理
-    return [];
-  };
-
-  const handleAnalyze = async () => {
-    if (!videoFile) {
-      alert('Please select a video first');
+  // 处理视频
+  const processVideo = async () => {
+    if (!videoFile || !videoProcessorRef.current) {
+      setProcessingProgress({
+        status: 'error',
+        current: 0,
+        total: 0,
+        message: 'Please select a video file first'
+      });
       return;
     }
 
-    setProgress({
-      status: 'analyzing',
-      currentFrame: 0,
-      totalFrames: 0,
-      message: 'Initializing analysis...'
-    });
-
     try {
-      // 提取帧（模拟）
-      const frames = await extractFramesFromVideo(videoFile);
+      console.log('🎬 Starting video processing...');
+      
+      // 步骤 1: 提取帧
+      setProcessingProgress({
+        status: 'extracting',
+        current: 0,
+        total: 0,
+        message: 'Extracting frames from video...'
+      });
 
-      // 调用 API 分析
+      const { frames, duration } = await videoProcessorRef.current.extractFrames(
+        videoFile,
+        10 // 默认提取 10 帧
+      );
+
+      setExtractedFrames(frames);
+      setVideoDuration(duration);
+
+      console.log(`✅ Extracted ${frames.length} frames, duration: ${duration}s`);
+
+      // 步骤 2: 调用 AI 分析
+      setProcessingProgress({
+        status: 'analyzing',
+        current: 0,
+        total: frames.length,
+        message: 'Analyzing frames with AI...'
+      });
+
+      // 转换帧为 base64
+      const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
+      
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          frames,
+          frames: framesBase64,
           useSlidingWindow
         })
       });
 
       if (!response.ok) {
-        throw new Error('Analysis failed');
+        throw new Error(`Analysis failed: ${response.statusText}`);
       }
 
       const data = await response.json();
 
       if (data.success && data.data) {
-        setProgress({
+        console.log('✅ Analysis complete');
+        
+        // 生成 SRT
+        const frameDuration = frames.length > 0 ? duration / frames.length : 0;
+        const srtContent = resultToSRT(data.data, frameDuration);
+        setSrtContent(srtContent);
+
+        setAnalysisResult(data.data);
+        setProcessingProgress({
           status: 'complete',
-          currentFrame: data.data.total_frames || 0,
-          totalFrames: data.data.total_frames || 0,
+          current: frames.length,
+          total: frames.length,
           message: `Analysis complete! Mode: ${data.data.mode || 'normal'}`
         });
-
-        setResult(data.data);
       } else {
-        throw new Error(data.error || 'Unknown error');
+        throw new Error(data.error || 'Analysis failed');
       }
 
     } catch (error) {
-      setProgress({
+      console.error('❌ Processing error:', error);
+      setProcessingProgress({
         status: 'error',
-        currentFrame: 0,
-        totalFrames: 0,
-        message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        current: 0,
+        total: 0,
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
-      console.error(error);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <header className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-indigo-900 mb-4">
-            🎬 VibeEnglish
-          </h1>
-          <p className="text-xl text-gray-700">
-            Learn English through Comprehensible Input from Videos
-          </p>
-        </header>
+  const handleAnalyze = () => {
+    processVideo().catch(err => {
+      console.error('Analysis failed:', err);
+    });
+  };
 
-        {/* Main Content */}
-        <div className="max-w-4xl mx-auto">
+  const handleVocabularyClick = (vocab: Vocabulary) => {
+    setSelectedVocabulary(vocab);
+    setShowWordExplanation(true);
+  };
+
+  const handleDownloadSRT = () => {
+    if (analysisResult && analysisResult.video_narrative) {
+      const frameDuration = videoDuration > 0 && extractedFrames.length > 0 
+        ? videoDuration / extractedFrames.length 
+        : 2.0;
+      downloadSRT(analysisResult, frameDuration);
+    }
+  };
+
+  const handleWordExplanationClose = () => {
+    setShowWordExplanation(false);
+    setSelectedVocabulary(null);
+  };
+
+  const getStatusIcon = () => {
+    switch (processingProgress.status) {
+      case 'idle':
+        return '📹';
+      case 'uploading':
+        return '📤';
+      case 'extracting':
+        return '🎞️';
+      case 'analyzing':
+        return '🤖';
+      case 'complete':
+        return '✅';
+      case 'error':
+        return '❌';
+      default:
+        return '📝';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (processingProgress.status) {
+      case 'idle':
+        return 'bg-gray-600';
+      case 'uploading':
+        return 'bg-blue-600';
+      case 'extracting':
+        return 'bg-purple-600';
+      case 'analyzing':
+        return 'bg-indigo-600';
+      case 'complete':
+        return 'bg-green-600';
+      case 'error':
+        return 'bg-red-600';
+      default:
+        return 'bg-gray-600';
+    }
+  };
+
+  if (!videoFile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <header className="text-center mb-8">
+            <h1 className="text-5xl font-bold text-indigo-900 mb-4">
+              🎬 VibeEnglish
+            </h1>
+            <p className="text-xl text-gray-700">
+              Learn English through Comprehensible Input from Videos
+            </p>
+            <div className="flex items-center justify-center space-x-2 mt-4">
+              <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium">
+                Browser-Side Video Extraction
+              </span>
+              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                SRT Subtitles
+              </span>
+            </div>
+          </header>
+
           {/* Upload Section */}
           <div className="bg-white rounded-2xl shadow-xl p-8 mb-8">
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-              📹 Upload Video
+              📤 Upload Video
             </h2>
 
             <div className="space-y-6">
               {/* File Input */}
-              <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-indigo-500 transition-colors">
+              <div 
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                  videoFile ? 'border-indigo-500 bg-indigo-50' : 'border-gray-300 hover:border-indigo-400'
+                }`}
+              >
                 <input
                   type="file"
                   id="video"
                   accept="video/*"
                   onChange={handleVideoChange}
+                  disabled={processingProgress.status !== 'idle'}
                   className="hidden"
                 />
                 <label
                   htmlFor="video"
-                  className="cursor-pointer block"
+                  className={`cursor-pointer block ${processingProgress.status !== 'idle' ? 'opacity-50 pointer-events-none' : ''}`}
                 >
                   <div className="text-6xl mb-4">📤</div>
                   <p className="text-lg text-gray-700">
                     {videoFile ? videoFile.name : 'Click to select a video file'}
                   </p>
                   <p className="text-sm text-gray-500 mt-2">
-                    Supports MP4, WebM, MOV (max 100MB)
+                    Supports MP4, WebM, MOV (max 500MB)
                   </p>
                 </label>
               </div>
 
               {/* Settings */}
               <div className="bg-gray-50 rounded-xl p-4">
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useSlidingWindow}
-                    onChange={(e) => setUseSlidingWindow(e.target.checked)}
-                    className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
-                  />
-                  <span className="text-gray-700 font-medium">
-                    Use Sliding Window (Narrative Continuity) 📖
-                  </span>
-                </label>
-                <p className="text-sm text-gray-500 mt-2 ml-8">
-                  Maintains story flow and consistent terminology across frames
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <label className="flex items-center space-x-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={useSlidingWindow}
+                      onChange={(e) => setUseSlidingWindow(e.target.checked)}
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
+                      disabled={processingProgress.status !== 'idle'}
+                    />
+                    <span className="text-gray-700 font-medium">
+                      Use Sliding Window (Narrative Continuity) 📖
+                    </span>
+                  </label>
+                  <div className="text-xs text-gray-400">
+                    Maintains story flow and consistent terminology across frames
+                  </div>
+                </div>
+                
+                {/* Settings */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      Extraction Method:
+                    </span>
+                    <select 
+                      className="border border-gray-300 rounded px-3 py-1 text-sm"
+                      disabled={processingProgress.status !== 'idle'}
+                      defaultValue="even"
+                    >
+                      <option value="even">Even Distribution (Recommended)</option>
+                      <option value="key">Key Frames (Scene Detection)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               {/* Analyze Button */}
               <button
                 onClick={handleAnalyze}
-                disabled={!videoFile || progress.status === 'analyzing'}
+                disabled={!videoFile || processingProgress.status !== 'idle' || processingProgress.status === 'analyzing'}
                 className="w-full bg-indigo-600 text-white py-4 rounded-xl font-semibold text-lg
                          hover:bg-indigo-700 transition-colors disabled:bg-gray-400
                          disabled:cursor-not-allowed"
               >
-                {progress.status === 'analyzing' ? '🔄 Analyzing...' : '🚀 Start Analysis'}
+                {processingProgress.status === 'analyzing' ? (
+                  <span className="flex items-center justify-center">
+                    <span className="animate-spin mr-3">⚙️</span>
+                    Analyzing... ({processingProgress.current}/{processingProgress.total})
+                  </span>
+                ) : (
+                  <span>🚀 Start Analysis</span>
+                )}
               </button>
 
               {/* Progress */}
-              {progress.status !== 'idle' && (
+              {processingProgress.status !== 'idle' && (
                 <div className="bg-gray-50 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-700">
-                      {progress.status === 'analyzing' && '🔄 Processing...'}
-                      {progress.status === 'complete' && '✅ Complete!'}
-                      {progress.status === 'error' && '❌ Error'}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {progress.currentFrame} / {progress.totalFrames} frames
-                    </span>
+                  {/* Status */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getStatusColor()}`}>
+                        <span className="text-xl text-white">
+                          {getStatusIcon()}
+                        </span>
+                      </div>
+                      <span className="font-semibold text-gray-800">
+                        {processingProgress.status.charAt(0).toUpperCase() + processingProgress.status.slice(1)}
+                      </span>
+                    </div>
+                    {processingProgress.total > 0 && (
+                      <span className="text-sm text-gray-500">
+                        {processingProgress.current}/{processingProgress.total}
+                      </span>
+                    )}
+                  </div>
+                    {processingProgress.status === 'complete' && srtContent && (
+                      <button
+                        onClick={handleDownloadSRT}
+                        className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                      >
+                        📥 Download SRT
+                      </button>
+                    )}
                   </div>
 
                   {/* Progress Bar */}
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-indigo-600 h-3 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${progress.totalFrames > 0
-                          ? (progress.currentFrame / progress.totalFrames) * 100
-                          : 0}%`
-                      }}
-                    />
-                  </div>
+                  {processingProgress.total > 0 && (
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className={`h-3 rounded-full transition-all duration-300 ${
+                          processingProgress.status === 'complete' ? 'bg-green-500' : 'bg-indigo-600'
+                        }`}
+                        style={{ width: `${(processingProgress.current / processingProgress.total) * 100}%` }}
+                      />
+                    </div>
+                  )}
 
                   <p className="text-sm text-gray-600 mt-2">
-                    {progress.message}
+                    {processingProgress.message}
                   </p>
+
+                  {/* Details */}
+                  {processingProgress.status === 'extracting' && extractedFrames.length > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-sm text-blue-800 mb-1">
+                        📸 Frames extracted: {extractedFrames.length}
+                      </p>
+                      <p className="text-sm text-blue-800 mb-1">
+                        ⏱️  Video duration: {videoDuration.toFixed(1)}s
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        📊 Average interval: {(videoDuration / extractedFrames.length).toFixed(2)}s per frame
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
           {/* Results Section */}
-          {result && result.video_narrative && (
+          {analysisResult && analysisResult.video_narrative && (
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold text-gray-800">
                   📊 Analysis Results
                 </h2>
-                {result.mode && (
+                {analysisResult.mode && (
                   <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                    Mode: {result.mode}
+                    Mode: {analysisResult.mode}
                   </span>
                 )}
               </div>
 
-              <div className="space-y-4">
-                {result.video_narrative.map((entry) => (
-                  <div
-                    key={entry.frame_index}
-                    className="bg-gray-50 rounded-xl p-6 border border-gray-200"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-indigo-600">
-                        Frame {entry.frame_index} [{entry.timestamp}]
-                      </span>
-                      {entry.core_word && (
-                        <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
-                          Core: {entry.core_word}
-                        </span>
-                      )}
-                    </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left: Video Player */}
+                <div className="lg:col-span-2">
+                  <VideoPlayer 
+                    videoUrl={extractedFrames.length > 0 ? extractedFrames[0].imageUrl : null}
+                    currentTime={0}
+                    onTimeUpdate={(time) => {
+                      // 同步字幕显示
+                      if (analysisResult.video_narrative && analysisResult.video_narrative.length > 0) {
+                        const frameIndex = Math.min(
+                          Math.floor(time / (videoDuration / extractedFrames.length)),
+                          analysisResult.video_narrative.length - 1
+                        );
+                        setCurrentSubtitleIndex(frameIndex);
+                      }
+                    }}
+                  />
+                </div>
 
-                    {/* 上下文提示 */}
-                    {entry.context_continuity && (
-                      <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
-                        <p className="text-xs text-gray-600 mb-1">
-                          🔗 Previous Context:
-                        </p>
-                        <p className="text-sm text-gray-700 italic">
-                          {entry.context_continuity.previous_sentence}
-                        </p>
-                      </div>
-                    )}
-
-                    <p className="text-lg text-gray-800 mb-3">
-                      {entry.sentence}
-                    </p>
-
-                    {entry.advanced_vocabulary && entry.advanced_vocabulary.length > 0 && (
+                {/* Right: Analysis Results */}
+                <div className="lg:col-span-1 space-y-4">
+                  {/* Stats */}
+                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-200">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                      📈 Statistics
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <p className="text-sm font-semibold text-gray-600 mb-2">
-                          Advanced Vocabulary ({entry.vocabulary_count || entry.advanced_vocabulary.length} words):
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {entry.advanced_vocabulary.slice(0, 8).map((vocab) => (
-                            <span
-                              key={vocab.word}
-                              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium
-                                       hover:bg-blue-200 transition-colors cursor-pointer"
-                              title={`${vocab.level} | ${vocab.frequency}`}
-                            >
-                              {vocab.word}
-                              <span className="text-xs ml-1 opacity-75">({vocab.level})</span>
-                            </span>
-                          ))}
-                        </div>
+                        <span className="text-gray-600">Total Frames:</span>
+                        <span className="font-semibold text-gray-800">
+                          {analysisResult.total_frames || extractedFrames.length}
+                        </span>
                       </div>
-                    )}
+                      <div>
+                        <span className="text-gray-600">Total Duration:</span>
+                        <span className="font-semibold text-gray-800">
+                          {videoDuration.toFixed(1)}s
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Frame Interval:</span>
+                        <span className="font-semibold text-gray-800">
+                          {(videoDuration / extractedFrames.length).toFixed(2)}s
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Total Vocab:</span>
+                        <span className="font-semibold text-gray-800">
+                          {analysisResult.video_narrative.reduce((sum, entry) => 
+                            sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0), 
+                            0)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
 
-              {/* 统计 */}
-              <div className="mt-6 bg-indigo-50 rounded-xl p-6 border border-indigo-200">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                  📈 Statistics
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Total Frames:</span>
-                    <span className="font-semibold text-gray-800 ml-2">
-                      {result.total_frames || result.video_narrative.length}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Total Vocabulary:</span>
-                    <span className="font-semibold text-gray-800 ml-2">
-                      {result.video_narrative.reduce((sum, entry) => sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0), 0)}
-                    </span>
+                  {/* Narratives */}
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                      📝 Video Narrative
+                    </h3>
+                    
+                    {analysisResult.video_narrative.map((entry, index) => {
+                      const isActive = index === currentSubtitleIndex;
+
+                      return (
+                        <div 
+                          key={entry.frame_index}
+                          className={`p-4 rounded-xl border transition-all ${
+                            isActive 
+                              ? 'border-indigo-500 bg-indigo-50' 
+                              : 'border-gray-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <span className="text-xs font-semibold text-indigo-600">
+                                Frame {entry.frame_index}
+                              </span>
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                entry.core_word ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'
+                              }`}>
+                                {entry.timestamp}
+                              </span>
+                            </div>
+                            {entry.core_word && (
+                              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                                Core: {entry.core_word}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Context */}
+                          {entry.context_continuity && (
+                            <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
+                              <p className="text-xs text-gray-600 mb-1">
+                                🔗 Previous Context:
+                              </p>
+                              <p className="text-sm text-gray-700 italic">
+                                {entry.context_continuity.previous_sentence}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Sentence */}
+                          <p className="text-lg text-gray-800 mb-3 leading-relaxed">
+                            {entry.sentence}
+                          </p>
+
+                          {/* Vocabulary */}
+                          {entry.advanced_vocabulary && entry.advanced_vocabulary.length > 0 && (
+                            <div>
+                              <p className="text-sm font-semibold text-gray-600 mb-2">
+                                Advanced Vocabulary ({entry.vocabulary_count} words):
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {entry.advanced_vocabulary.slice(0, 8).map((vocab, vIndex) => (
+                                  <span
+                                    key={vIndex}
+                                    onClick={() => handleVocabularyClick(vocab)}
+                                    className={`inline-flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
+                                      vocab.level === 'C1/C2' 
+                                          ? 'bg-red-100 text-red-800 hover:bg-red-200' 
+                                          : vocab.level === 'B2'
+                                          ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                          : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                    }`}
+                                    title={`${vocab.word} (${vocab.level})`}
+                                  >
+                                    <span className="font-medium">
+                                      {vocab.word}
+                                    </span>
+                                    <span className="text-xs opacity-75">
+                                      ({vocab.level})
+                                    </span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Word Explanation Modal */}
+          {showWordExplanation && selectedVocabulary && (
+            <WordExplanation
+              vocabulary={selectedVocabulary}
+              onClose={handleWordExplanationClose}
+            />
+          )}
         </div>
-      </div>
-    </div>
-  );
+    );
 }
