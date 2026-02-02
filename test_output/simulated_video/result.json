@@ -1,0 +1,145 @@
+{
+  "video_narrative": [
+    {
+      "frame_index": 0,
+      "timestamp": "00:00",
+      "sentence": "Two skeletons converse over tea at a round table beneath a glowing lamp, with a night sky and bats visible through an arched window.",
+      "advanced_vocabulary": [
+        {
+          "word": "arched",
+          "lemma": "arched",
+          "level": "B2",
+          "frequency": "Zipf: 3.24",
+          "pos": "ADJ"
+        },
+        {
+          "word": "converse",
+          "lemma": "converse",
+          "level": "B2",
+          "frequency": "Zipf: 3.48",
+          "pos": "VERB"
+        },
+        {
+          "word": "glowing",
+          "lemma": "glowing",
+          "level": "B2",
+          "frequency": "Zipf: 3.75",
+          "pos": "ADJ"
+        },
+        {
+          "word": "skeletons",
+          "lemma": "skeleton",
+          "level": "B2",
+          "frequency": "Zipf: 3.8",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              108,
+              502,
+              422,
+              961
+            ],
+            [
+              507,
+              476,
+              908,
+              946
+            ]
+          ]
+        },
+        {
+          "word": "lamp",
+          "lemma": "lamp",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.05",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              443,
+              513,
+              570,
+              681
+            ]
+          ]
+        },
+        {
+          "word": "beneath",
+          "lemma": "beneath",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.24",
+          "pos": "ADP"
+        },
+        {
+          "word": "bats",
+          "lemma": "bat",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.3",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "visible",
+          "lemma": "visible",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.39",
+          "pos": "ADJ"
+        },
+        {
+          "word": "sky",
+          "lemma": "sky",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.72",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "tea",
+          "lemma": "tea",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.73",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "window",
+          "lemma": "window",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.8",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              286,
+              49,
+              713,
+              466
+            ]
+          ]
+        },
+        {
+          "word": "table",
+          "lemma": "table",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.05",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              272,
+              668,
+              693,
+              976
+            ]
+          ]
+        },
+        {
+          "word": "round",
+          "lemma": "round",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.14",
+          "pos": "ADJ"
+        }
+      ],
+      "core_word": "arched",
+      "vocabulary_count": 13
+    }
+  ]
+}
