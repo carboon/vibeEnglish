@@ -1,45 +1,81 @@
 /**
- * 视频播放器组件
+ * 视频播放器组件 v2
+ * 添加 SRT 字幕支持
  */
 
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { 
+  findCurrentSRTEntry, 
+  calculateSRTProgress 
+} from '@/lib/srt';
 
 interface VideoPlayerProps {
   videoUrl: string | null;
   currentTime?: number;
   onTimeUpdate?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
+  srtContent?: string | null;  // SRT 字幕内容
 }
 
 export default function VideoPlayer({
   videoUrl,
   currentTime: externalCurrentTime = 0,
   onTimeUpdate,
-  onDurationChange
+  onDurationChange,
+  srtContent
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
+  const [currentSRTEntry, setCurrentSRTEntry] = useState<{ id: number; startTime: number; endTime: number; text: string } | null>(null);
+  const [srtProgress, setSRTProgress] = useState(0);
+
+  // 解析 SRT 字幕
+  useEffect(() => {
+    if (!srtContent) {
+      setCurrentSRTEntry(null);
+      return;
+    }
+
+    const parsed = parseSRT(srtContent);
+    setCurrentSRTEntry(findCurrentSRTEntry(currentTime, parsed.entries));
+    setSRTProgress(calculateSRTProgress(currentTime, currentSRTEntry));
+  }, [srtContent, currentTime]);
 
   // 同步外部时间（用于字幕同步）
   useEffect(() => {
     if (externalCurrentTime !== currentTime && videoRef.current) {
       videoRef.current.currentTime = externalCurrentTime;
       setCurrentTime(externalCurrentTime);
+      
+      // 更新字幕状态
+      if (srtContent) {
+        const parsed = parseSRT(srtContent);
+        setCurrentSRTEntry(findCurrentSRTEntry(externalCurrentTime, parsed.entries));
+        setSRTProgress(calculateSRTProgress(externalCurrentTime, currentSRTEntry));
+      }
     }
   }, [externalCurrentTime]);
 
-  const handleTimeUpdate = () => {
+  const handleTimeUpdate = useCallback(() => {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
+      
+      // 更新字幕状态
+      if (srtContent) {
+        const parsed = parseSRT(srtContent);
+        setCurrentSRTEntry(findCurrentSRTEntry(time, parsed.entries));
+        setSRTProgress(calculateSRTProgress(time, currentSRTEntry));
+      }
+      
       onTimeUpdate?.(time);
     }
-  };
+  }, [srtContent, onTimeUpdate]);
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
@@ -95,7 +131,7 @@ export default function VideoPlayer({
 
   return (
     <div className="bg-black rounded-xl overflow-hidden shadow-2xl">
-      {/* Video Element */}
+      {/* 视频元素 */}
       <video
         ref={videoRef}
         src={videoUrl}
@@ -107,9 +143,40 @@ export default function VideoPlayer({
         onEnded={() => setIsPlaying(false)}
       />
 
-      {/* Controls */}
+      {/* 字幕覆盖层 */}
+      {currentSRTEntry && (
+        <div 
+          className="absolute bottom-20 left-0 right-0 px-4 py-3 pointer-events-none"
+          style={{
+            textShadow: '0px 2px 8px rgba(0, 0, 0, 0.8)',
+          }}
+        >
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg">
+              <p className="text-lg font-medium leading-relaxed">
+                {currentSRTEntry.text}
+              </p>
+            </div>
+            
+            {/* 进度指示器 */}
+            <div className="flex items-center justify-center mt-2 space-x-2">
+              <span className="text-sm text-gray-300">
+                字幕 {currentSRTEntry.id}
+              </span>
+              <div className="flex-1 bg-gray-700 rounded-full h-1.5">
+                <div 
+                  className="bg-white h-full rounded-full transition-all duration-300"
+                  style={{ width: `${srtProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 控制面板 */}
       <div className="bg-gray-900 p-4 space-y-3">
-        {/* Progress Bar */}
+        {/* 进度条 */}
         <div
           className="relative w-full h-2 bg-gray-700 rounded-full cursor-pointer"
           onClick={handleSeek}
@@ -120,9 +187,9 @@ export default function VideoPlayer({
           />
         </div>
 
-        {/* Control Buttons */}
+        {/* 控制按钮 */}
         <div className="flex items-center justify-between">
-          {/* Play/Pause */}
+          {/* 播放/暂停 */}
           <button
             onClick={togglePlay}
             className="text-white text-2xl hover:text-indigo-400 transition-colors"
@@ -130,14 +197,25 @@ export default function VideoPlayer({
             {isPlaying ? '⏸️' : '▶️'}
           </button>
 
-          {/* Time Display */}
-          <div className="text-white font-mono">
-            <span className="text-sm">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
+          {/* 时间显示 */}
+          <div className="flex items-center space-x-4">
+            <div className="text-white font-mono">
+              <span className="text-sm text-gray-400">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
+
+            {/* 字幕状态 */}
+            {srtContent && currentSRTEntry && (
+              <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
+                {currentSRTEntry.id}/{currentSRTEntry.text.length > 30 
+                  ? '30+' 
+                  : currentSRTEntry.text.length}字
+              </span>
+            )}
           </div>
 
-          {/* Volume */}
+          {/* 音量控制 */}
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setVolume(Math.max(0, volume - 0.1))}
