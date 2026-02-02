@@ -16,11 +16,13 @@
 - [x] 图片转 base64 编码
 - [x] 调用 GLM-4V-Flash 生成描述 + 物体坐标
 - [x] 语言学后处理（分词、难度分级、核心词选择）
-- [ ] 优化 Prompt 稳定性（JSON 格式校验）
-- [ ] 添加错误处理和重试机制
+- [x] 优化 Prompt 稳定性（JSON 格式校验）
+- [x] 添加错误处理和重试机制
+- [x] 添加结果摘要打印和 JSON 导出
 
 ### M1.2 准备测试视频
-- [ ] 从 YouTube 下载 15s 英语学习视频
+- [ ] 从 YouTube 下载 15s 英语学习视频（遇到 SSL 错误，需代理或换源）
+- [ ] 从免费视频源下载测试视频
 - [ ] 视频抽帧（场景变化检测）
 - [ ] 测试完整流程：视频 → 抽帧 → AI 分析 → 生成文稿
 
@@ -120,3 +122,5 @@
 
 ## 提交记录
 - `init`: 初始化项目，添加核心文档和 test.py
+- `21cf96b`: docs: add TODO.md with project roadmap and milestones
+- `1f58cdd`: feat: improve test.py with error handling, retry logic, and better output
