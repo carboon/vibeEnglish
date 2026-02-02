@@ -1,0 +1,637 @@
+{
+  "video_narrative": [
+    {
+      "frame_index": 0,
+      "timestamp": "00:00",
+      "sentence": "A plump white rabbit lies on a grassy lawn beside a vibrant purple butterfly and small blue flowers.",
+      "advanced_vocabulary": [
+        {
+          "word": "plump",
+          "lemma": "plump",
+          "level": "B2",
+          "frequency": "Zipf: 3.19",
+          "pos": "ADJ"
+        },
+        {
+          "word": "grassy",
+          "lemma": "grassy",
+          "level": "B2",
+          "frequency": "Zipf: 3.24",
+          "pos": "ADJ"
+        },
+        {
+          "word": "vibrant",
+          "lemma": "vibrant",
+          "level": "B2",
+          "frequency": "Zipf: 3.67",
+          "pos": "ADJ"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B2",
+          "frequency": "Zipf: 3.93",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              50,
+              230,
+              75
+            ],
+            [
+              30,
+              20,
+              600,
+              50
+            ],
+            [
+              40,
+              20,
+              600,
+              40
+            ],
+            null
+          ]
+        },
+        {
+          "word": "lawn",
+          "lemma": "lawn",
+          "level": "B2",
+          "frequency": "Zipf: 3.98",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.05",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              40,
+              80,
+              80
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ]
+          ]
+        },
+        {
+          "word": "purple",
+          "lemma": "purple",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.32",
+          "pos": "ADJ"
+        },
+        {
+          "word": "flowers",
+          "lemma": "flower",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.42",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              520,
+              656,
+              690,
+              831
+            ],
+            [
+              520,
+              656,
+              690,
+              831
+            ],
+            null,
+            null
+          ]
+        },
+        {
+          "word": "lies",
+          "lemma": "lie",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.84",
+          "pos": "VERB"
+        },
+        {
+          "word": "blue",
+          "lemma": "blue",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.13",
+          "pos": "ADJ"
+        }
+      ],
+      "core_word": "plump",
+      "vocabulary_count": 10
+    },
+    {
+      "frame_index": 1,
+      "timestamp": "00:01",
+      "sentence": "The same plump white rabbit now stands upright with a large pink butterfly perched on its head, surrounded by the same blue flowers.",
+      "advanced_vocabulary": [
+        {
+          "word": "plump",
+          "lemma": "plump",
+          "level": "B2",
+          "frequency": "Zipf: 3.19",
+          "pos": "ADJ"
+        },
+        {
+          "word": "perched",
+          "lemma": "perch",
+          "level": "B2",
+          "frequency": "Zipf: 3.29",
+          "pos": "VERB"
+        },
+        {
+          "word": "upright",
+          "lemma": "upright",
+          "level": "B2",
+          "frequency": "Zipf: 3.74",
+          "pos": "ADJ"
+        },
+        {
+          "word": "surrounded",
+          "lemma": "surround",
+          "level": "B2",
+          "frequency": "Zipf: 3.79",
+          "pos": "VERB"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B2",
+          "frequency": "Zipf: 3.93",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              50,
+              230,
+              75
+            ],
+            [
+              30,
+              20,
+              600,
+              50
+            ],
+            [
+              40,
+              20,
+              600,
+              40
+            ],
+            null
+          ]
+        },
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.05",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              40,
+              80,
+              80
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ]
+          ]
+        },
+        {
+          "word": "flowers",
+          "lemma": "flower",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.42",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              520,
+              656,
+              690,
+              831
+            ],
+            [
+              520,
+              656,
+              690,
+              831
+            ],
+            null,
+            null
+          ]
+        },
+        {
+          "word": "pink",
+          "lemma": "pink",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.52",
+          "pos": "ADJ"
+        },
+        {
+          "word": "blue",
+          "lemma": "blue",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.13",
+          "pos": "ADJ"
+        },
+        {
+          "word": "stands",
+          "lemma": "stand",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.14",
+          "pos": "VERB"
+        },
+        {
+          "word": "large",
+          "lemma": "large",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.39",
+          "pos": "ADJ"
+        }
+      ],
+      "core_word": "plump",
+      "vocabulary_count": 11
+    },
+    {
+      "frame_index": 2,
+      "timestamp": "00:02",
+      "sentence": "A robust white rabbit stands in a sunlit meadow with a pink butterfly fluttering above, distant mountains, and lush green trees.",
+      "advanced_vocabulary": [
+        {
+          "word": "fluttering",
+          "lemma": "flutter",
+          "level": "B2",
+          "frequency": "Zipf: 3.06",
+          "pos": "VERB"
+        },
+        {
+          "word": "lush",
+          "lemma": "lush",
+          "level": "B2",
+          "frequency": "Zipf: 3.55",
+          "pos": "ADJ"
+        },
+        {
+          "word": "meadow",
+          "lemma": "meadow",
+          "level": "B2",
+          "frequency": "Zipf: 3.6",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B2",
+          "frequency": "Zipf: 3.93",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              50,
+              230,
+              75
+            ],
+            [
+              30,
+              20,
+              600,
+              50
+            ],
+            [
+              40,
+              20,
+              600,
+              40
+            ],
+            null
+          ]
+        },
+        {
+          "word": "robust",
+          "lemma": "robust",
+          "level": "B2",
+          "frequency": "Zipf: 3.94",
+          "pos": "ADJ"
+        },
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.05",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              40,
+              80,
+              80
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ]
+          ]
+        },
+        {
+          "word": "distant",
+          "lemma": "distant",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.19",
+          "pos": "ADJ"
+        },
+        {
+          "word": "pink",
+          "lemma": "pink",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.52",
+          "pos": "ADJ"
+        },
+        {
+          "word": "mountains",
+          "lemma": "mountain",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.73",
+          "pos": "NOUN",
+          "coordinates": [
+            null,
+            null,
+            [
+              0,
+              520,
+              1000,
+              820
+            ],
+            null
+          ]
+        },
+        {
+          "word": "trees",
+          "lemma": "tree",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.85",
+          "pos": "NOUN",
+          "coordinates": [
+            null,
+            null,
+            [
+              610,
+              420,
+              990,
+              820
+            ],
+            null
+          ]
+        },
+        {
+          "word": "green",
+          "lemma": "green",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.13",
+          "pos": "ADJ"
+        },
+        {
+          "word": "stands",
+          "lemma": "stand",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.14",
+          "pos": "VERB"
+        }
+      ],
+      "core_word": "fluttering",
+      "vocabulary_count": 12
+    },
+    {
+      "frame_index": 3,
+      "timestamp": "00:03",
+      "sentence": "The plump white rabbit sits on the grass with its paws clasped, a bright red egg beside it, under a bright blue sky with fluffy clouds.",
+      "advanced_vocabulary": [
+        {
+          "word": "clasped",
+          "lemma": "clasp",
+          "level": "B2",
+          "frequency": "Zipf: 3.1",
+          "pos": "VERB"
+        },
+        {
+          "word": "plump",
+          "lemma": "plump",
+          "level": "B2",
+          "frequency": "Zipf: 3.19",
+          "pos": "ADJ"
+        },
+        {
+          "word": "paws",
+          "lemma": "paw",
+          "level": "B2",
+          "frequency": "Zipf: 3.48",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "fluffy",
+          "lemma": "fluffy",
+          "level": "B2",
+          "frequency": "Zipf: 3.59",
+          "pos": "ADJ"
+        },
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.05",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              20,
+              40,
+              80,
+              80
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ],
+            [
+              40,
+              40,
+              800,
+              860
+            ]
+          ]
+        },
+        {
+          "word": "grass",
+          "lemma": "grass",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.38",
+          "pos": "NOUN",
+          "coordinates": [
+            [
+              0,
+              0,
+              1000,
+              1000
+            ],
+            null,
+            [
+              0,
+              0,
+              1000,
+              1000
+            ],
+            [
+              0,
+              0,
+              1000,
+              1000
+            ]
+          ]
+        },
+        {
+          "word": "egg",
+          "lemma": "egg",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.46",
+          "pos": "NOUN",
+          "coordinates": [
+            null,
+            null,
+            null,
+            [
+              60,
+              72,
+              750,
+              82
+            ]
+          ]
+        },
+        {
+          "word": "clouds",
+          "lemma": "cloud",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.46",
+          "pos": "NOUN",
+          "coordinates": []
+        },
+        {
+          "word": "bright",
+          "lemma": "bright",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.61",
+          "pos": "ADJ"
+        },
+        {
+          "word": "bright",
+          "lemma": "bright",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.61",
+          "pos": "ADJ"
+        },
+        {
+          "word": "sky",
+          "lemma": "sky",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.72",
+          "pos": "NOUN",
+          "coordinates": [
+            null,
+            null,
+            null,
+            [
+              0,
+              0,
+              1000,
+              520
+            ]
+          ]
+        },
+        {
+          "word": "sits",
+          "lemma": "sit",
+          "level": "A1/A2",
+          "frequency": "Zipf: 4.9",
+          "pos": "VERB"
+        },
+        {
+          "word": "blue",
+          "lemma": "blue",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.13",
+          "pos": "ADJ"
+        },
+        {
+          "word": "red",
+          "lemma": "red",
+          "level": "A1/A2",
+          "frequency": "Zipf: 5.32",
+          "pos": "ADJ"
+        }
+      ],
+      "core_word": "clasped",
+      "vocabulary_count": 14
+    }
+  ]
+}
