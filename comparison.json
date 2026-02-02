@@ -1,0 +1,1083 @@
+{
+  "normal_mode": {
+    "video_narrative": [
+      {
+        "frame_index": 0,
+        "timestamp": "00:00",
+        "sentence": "A plump white rabbit rests on a grassy lawn adjacent to a large purple butterfly and small blue wildflowers.",
+        "advanced_vocabulary": [
+          {
+            "word": "wildflowers",
+            "lemma": "wildflower",
+            "level": "C1/C2",
+            "frequency": "Zipf: 2.69",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                53,
+                55,
+                70,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "plump",
+            "lemma": "plump",
+            "level": "B2",
+            "frequency": "Zipf: 3.19",
+            "pos": "ADJ"
+          },
+          {
+            "word": "grassy",
+            "lemma": "grassy",
+            "level": "B2",
+            "frequency": "Zipf: 3.24",
+            "pos": "ADJ"
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                15,
+                20,
+                50,
+                50
+              ],
+              [
+                23,
+                15,
+                60,
+                50
+              ],
+              [
+                20,
+                15,
+                30,
+                22
+              ],
+              [
+                20,
+                50,
+                50,
+                65
+              ]
+            ]
+          },
+          {
+            "word": "lawn",
+            "lemma": "lawn",
+            "level": "B2",
+            "frequency": "Zipf: 3.98",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                0,
+                0,
+                1000,
+                1000
+              ]
+            ]
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                25,
+                20,
+                80,
+                80
+              ],
+              [
+                30,
+                20,
+                80,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "adjacent",
+            "lemma": "adjacent",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.12",
+            "pos": "ADJ"
+          },
+          {
+            "word": "purple",
+            "lemma": "purple",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.32",
+            "pos": "ADJ"
+          },
+          {
+            "word": "blue",
+            "lemma": "blue",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.13",
+            "pos": "ADJ"
+          },
+          {
+            "word": "rests",
+            "lemma": "rest",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.23",
+            "pos": "VERB"
+          },
+          {
+            "word": "large",
+            "lemma": "large",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.39",
+            "pos": "ADJ"
+          }
+        ],
+        "core_word": "wildflowers",
+        "vocabulary_count": 11
+      },
+      {
+        "frame_index": 1,
+        "timestamp": "00:01",
+        "sentence": "The same plump white rabbit now has a large pink butterfly perched on its head, surrounded by grass and blue flowers.",
+        "advanced_vocabulary": [
+          {
+            "word": "plump",
+            "lemma": "plump",
+            "level": "B2",
+            "frequency": "Zipf: 3.19",
+            "pos": "ADJ"
+          },
+          {
+            "word": "perched",
+            "lemma": "perch",
+            "level": "B2",
+            "frequency": "Zipf: 3.29",
+            "pos": "VERB"
+          },
+          {
+            "word": "surrounded",
+            "lemma": "surround",
+            "level": "B2",
+            "frequency": "Zipf: 3.79",
+            "pos": "VERB"
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                15,
+                20,
+                50,
+                50
+              ],
+              [
+                23,
+                15,
+                60,
+                50
+              ],
+              [
+                20,
+                15,
+                30,
+                22
+              ],
+              [
+                20,
+                50,
+                50,
+                65
+              ]
+            ]
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                25,
+                20,
+                80,
+                80
+              ],
+              [
+                30,
+                20,
+                80,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "grass",
+            "lemma": "grass",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.38",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                0,
+                0,
+                1000,
+                1000
+              ]
+            ]
+          },
+          {
+            "word": "flowers",
+            "lemma": "flower",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.42",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                53,
+                55,
+                70,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "pink",
+            "lemma": "pink",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.52",
+            "pos": "ADJ"
+          },
+          {
+            "word": "blue",
+            "lemma": "blue",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.13",
+            "pos": "ADJ"
+          },
+          {
+            "word": "large",
+            "lemma": "large",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.39",
+            "pos": "ADJ"
+          }
+        ],
+        "core_word": "plump",
+        "vocabulary_count": 10
+      },
+      {
+        "frame_index": 2,
+        "timestamp": "00:02",
+        "sentence": "The plump white rabbit stands in a vast, sunlit meadow with distant mountains and trees, while a pink butterfly flies overhead.",
+        "advanced_vocabulary": [
+          {
+            "word": "plump",
+            "lemma": "plump",
+            "level": "B2",
+            "frequency": "Zipf: 3.19",
+            "pos": "ADJ"
+          },
+          {
+            "word": "meadow",
+            "lemma": "meadow",
+            "level": "B2",
+            "frequency": "Zipf: 3.6",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                0,
+                0,
+                1000,
+                1000
+              ]
+            ]
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                15,
+                20,
+                50,
+                50
+              ],
+              [
+                23,
+                15,
+                60,
+                50
+              ],
+              [
+                20,
+                15,
+                30,
+                22
+              ],
+              [
+                20,
+                50,
+                50,
+                65
+              ]
+            ]
+          },
+          {
+            "word": "overhead",
+            "lemma": "overhead",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "ADV"
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                25,
+                20,
+                80,
+                80
+              ],
+              [
+                30,
+                20,
+                80,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "distant",
+            "lemma": "distant",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.19",
+            "pos": "ADJ"
+          },
+          {
+            "word": "vast",
+            "lemma": "vast",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.49",
+            "pos": "ADJ"
+          },
+          {
+            "word": "pink",
+            "lemma": "pink",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.52",
+            "pos": "ADJ"
+          },
+          {
+            "word": "mountains",
+            "lemma": "mountain",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.73",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                20,
+                50,
+                98,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "flies",
+            "lemma": "fly",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.75",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "trees",
+            "lemma": "tree",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.85",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                65,
+                40,
+                98,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "stands",
+            "lemma": "stand",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.14",
+            "pos": "VERB"
+          }
+        ],
+        "core_word": "plump",
+        "vocabulary_count": 12
+      },
+      {
+        "frame_index": 3,
+        "timestamp": "00:03",
+        "sentence": "The plump white rabbit is positioned in a lush green field with scattered small animals and a pink butterfly in the background.",
+        "advanced_vocabulary": [
+          {
+            "word": "plump",
+            "lemma": "plump",
+            "level": "B2",
+            "frequency": "Zipf: 3.19",
+            "pos": "ADJ"
+          },
+          {
+            "word": "scattered",
+            "lemma": "scatter",
+            "level": "B2",
+            "frequency": "Zipf: 3.39",
+            "pos": "VERB"
+          },
+          {
+            "word": "lush",
+            "lemma": "lush",
+            "level": "B2",
+            "frequency": "Zipf: 3.55",
+            "pos": "ADJ"
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                15,
+                20,
+                50,
+                50
+              ],
+              [
+                23,
+                15,
+                60,
+                50
+              ],
+              [
+                20,
+                15,
+                30,
+                22
+              ],
+              [
+                20,
+                50,
+                50,
+                65
+              ]
+            ]
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                25,
+                20,
+                80,
+                80
+              ],
+              [
+                30,
+                20,
+                80,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ],
+              [
+                32,
+                30,
+                70,
+                80
+              ]
+            ]
+          },
+          {
+            "word": "pink",
+            "lemma": "pink",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.52",
+            "pos": "ADJ"
+          },
+          {
+            "word": "background",
+            "lemma": "background",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.77",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "animals",
+            "lemma": "animal",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.81",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "green",
+            "lemma": "green",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.13",
+            "pos": "ADJ"
+          },
+          {
+            "word": "positioned",
+            "lemma": "position",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.21",
+            "pos": "VERB"
+          },
+          {
+            "word": "field",
+            "lemma": "field",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.24",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                0,
+                0,
+                1000,
+                1000
+              ]
+            ]
+          }
+        ],
+        "core_word": "plump",
+        "vocabulary_count": 11
+      }
+    ]
+  },
+  "sliding_window_mode": {
+    "video_narrative": [
+      {
+        "frame_index": 0,
+        "timestamp": "00:00",
+        "sentence": "A pale rabbit leaps through a sun-dappled meadow, its paws outstretched, as a vibrant purple butterfly flutters nearby amid scattered blue flowers.",
+        "advanced_vocabulary": [
+          {
+            "word": "flutters",
+            "lemma": "flutter",
+            "level": "B2",
+            "frequency": "Zipf: 3.06",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "scattered",
+            "lemma": "scatter",
+            "level": "B2",
+            "frequency": "Zipf: 3.39",
+            "pos": "VERB"
+          },
+          {
+            "word": "paws",
+            "lemma": "paw",
+            "level": "B2",
+            "frequency": "Zipf: 3.48",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "meadow",
+            "lemma": "meadow",
+            "level": "B2",
+            "frequency": "Zipf: 3.6",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "vibrant",
+            "lemma": "vibrant",
+            "level": "B2",
+            "frequency": "Zipf: 3.67",
+            "pos": "ADJ"
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                16,
+                515,
+                276,
+                775
+              ]
+            ]
+          },
+          {
+            "word": "leaps",
+            "lemma": "leap",
+            "level": "B2",
+            "frequency": "Zipf: 3.94",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "amid",
+            "lemma": "amid",
+            "level": "B2",
+            "frequency": "Zipf: 3.95",
+            "pos": "ADP"
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                325,
+                115,
+                805,
+                775
+              ]
+            ]
+          },
+          {
+            "word": "pale",
+            "lemma": "pale",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.08",
+            "pos": "ADJ"
+          },
+          {
+            "word": "purple",
+            "lemma": "purple",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.32",
+            "pos": "ADJ"
+          },
+          {
+            "word": "flowers",
+            "lemma": "flower",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.42",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                318,
+                660,
+                448,
+                795
+              ]
+            ]
+          },
+          {
+            "word": "nearby",
+            "lemma": "nearby",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.55",
+            "pos": "ADV"
+          },
+          {
+            "word": "sun",
+            "lemma": "sun",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.97",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "blue",
+            "lemma": "blue",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.13",
+            "pos": "ADJ"
+          }
+        ],
+        "core_word": "flutters",
+        "vocabulary_count": 15
+      },
+      {
+        "frame_index": 1,
+        "timestamp": "02:02",
+        "sentence": "The pale rabbit comes to a stop, and the vibrant purple butterfly settles on its forehead, resting there as the meadow's gentle light filters through.",
+        "advanced_vocabulary": [
+          {
+            "word": "meadow",
+            "lemma": "meadow",
+            "level": "B2",
+            "frequency": "Zipf: 3.6",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "vibrant",
+            "lemma": "vibrant",
+            "level": "B2",
+            "frequency": "Zipf: 3.67",
+            "pos": "ADJ"
+          },
+          {
+            "word": "forehead",
+            "lemma": "forehead",
+            "level": "B2",
+            "frequency": "Zipf: 3.87",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                262,
+                26,
+                648,
+                590
+              ]
+            ]
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                438,
+                236,
+                786,
+                988
+              ]
+            ]
+          },
+          {
+            "word": "pale",
+            "lemma": "pale",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.08",
+            "pos": "ADJ"
+          },
+          {
+            "word": "gentle",
+            "lemma": "gentle",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.17",
+            "pos": "ADJ"
+          },
+          {
+            "word": "filters",
+            "lemma": "filter",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.28",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "purple",
+            "lemma": "purple",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.32",
+            "pos": "ADJ"
+          },
+          {
+            "word": "settles",
+            "lemma": "settle",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.37",
+            "pos": "VERB"
+          },
+          {
+            "word": "resting",
+            "lemma": "rest",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.23",
+            "pos": "VERB"
+          },
+          {
+            "word": "light",
+            "lemma": "light",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.33",
+            "pos": "NOUN",
+            "coordinates": []
+          }
+        ],
+        "core_word": "meadow",
+        "vocabulary_count": 12,
+        "context_continuity": {
+          "previous_sentence": "A pale rabbit leaps through a sun-dappled meadow, its paws outstretched, as a vibrant purple butterfly flutters nearby amid scattered blue flowers."
+        }
+      },
+      {
+        "frame_index": 2,
+        "timestamp": "04:04",
+        "sentence": "The butterfly ascends, departing the rabbit's forehead as the animal remains upright in the sunlit meadow.",
+        "advanced_vocabulary": [
+          {
+            "word": "ascends",
+            "lemma": "ascend",
+            "level": "B2",
+            "frequency": "Zipf: 3.24",
+            "pos": "VERB"
+          },
+          {
+            "word": "meadow",
+            "lemma": "meadow",
+            "level": "B2",
+            "frequency": "Zipf: 3.6",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "departing",
+            "lemma": "depart",
+            "level": "B2",
+            "frequency": "Zipf: 3.67",
+            "pos": "VERB"
+          },
+          {
+            "word": "upright",
+            "lemma": "upright",
+            "level": "B2",
+            "frequency": "Zipf: 3.74",
+            "pos": "ADJ"
+          },
+          {
+            "word": "forehead",
+            "lemma": "forehead",
+            "level": "B2",
+            "frequency": "Zipf: 3.87",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                400,
+                100,
+                500,
+                150
+              ]
+            ]
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                200,
+                300,
+                800,
+                800
+              ]
+            ]
+          },
+          {
+            "word": "animal",
+            "lemma": "animal",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.81",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "remains",
+            "lemma": "remain",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.83",
+            "pos": "VERB"
+          }
+        ],
+        "core_word": "ascends",
+        "vocabulary_count": 9,
+        "context_continuity": {
+          "previous_sentence": "The pale rabbit comes to a stop, and the vibrant purple butterfly settles on its forehead, resting there as the meadow's gentle light filters through."
+        }
+      },
+      {
+        "frame_index": 3,
+        "timestamp": "06:06",
+        "sentence": "The robust rabbit advances through the sunlit meadow, as the butterfly drifts upward toward the tree line.",
+        "advanced_vocabulary": [
+          {
+            "word": "meadow",
+            "lemma": "meadow",
+            "level": "B2",
+            "frequency": "Zipf: 3.6",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "upward",
+            "lemma": "upward",
+            "level": "B2",
+            "frequency": "Zipf: 3.71",
+            "pos": "ADV"
+          },
+          {
+            "word": "drifts",
+            "lemma": "drift",
+            "level": "B2",
+            "frequency": "Zipf: 3.82",
+            "pos": "VERB"
+          },
+          {
+            "word": "butterfly",
+            "lemma": "butterfly",
+            "level": "B2",
+            "frequency": "Zipf: 3.93",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                600,
+                500,
+                650,
+                550
+              ]
+            ]
+          },
+          {
+            "word": "robust",
+            "lemma": "robust",
+            "level": "B2",
+            "frequency": "Zipf: 3.94",
+            "pos": "ADJ"
+          },
+          {
+            "word": "rabbit",
+            "lemma": "rabbit",
+            "level": "B1/B2",
+            "frequency": "Zipf: 4.05",
+            "pos": "NOUN",
+            "coordinates": [
+              [
+                200,
+                150,
+                500,
+                550
+              ]
+            ]
+          },
+          {
+            "word": "advances",
+            "lemma": "advance",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.65",
+            "pos": "VERB"
+          },
+          {
+            "word": "tree",
+            "lemma": "tree",
+            "level": "A1/A2",
+            "frequency": "Zipf: 4.85",
+            "pos": "NOUN",
+            "coordinates": []
+          },
+          {
+            "word": "line",
+            "lemma": "line",
+            "level": "A1/A2",
+            "frequency": "Zipf: 5.49",
+            "pos": "NOUN",
+            "coordinates": []
+          }
+        ],
+        "core_word": "meadow",
+        "vocabulary_count": 9,
+        "context_continuity": {
+          "previous_sentence": "The butterfly ascends, departing the rabbit's forehead as the animal remains upright in the sunlit meadow."
+        }
+      }
+    ],
+    "mode": "sliding_window",
+    "total_frames": 4,
+    "context_type": "narrative_continuity"
+  },
+  "comparison": {
+    "total_vocab_normal": 44,
+    "total_vocab_sliding": 45
+  }
+}
