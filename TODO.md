@@ -126,3 +126,5 @@
 - `init`: 初始化项目，添加核心文档和 test.py
 - `21cf96b`: docs: add TODO.md with project roadmap and milestones
 - `1f58cdd`: feat: improve test.py with error handling, retry logic, and better output
+- `920bd1c`: feat: add video frame extraction and end-to-end pipeline
+- `719ca6a`: test: successful end-to-end test with real video ✅ MILESTONE 1 COMPLETE
