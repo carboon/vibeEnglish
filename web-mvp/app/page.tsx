@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { AnalysisResult, Vocabulary } from '@/types';
+import { AnalysisResult, Vocabulary, NarrativeEntry } from '@/types';
 import { VideoProcessor, type VideoFrame } from '@/lib/video';
 import { generateSRTBlob, downloadSRT, resultToSRT } from '@/lib/srt';
 import { CacheManager } from '@/lib/cache';
 import VideoPlayer from './components/VideoPlayer';
 import WordExplanation from './components/WordExplanation';
+import SubtitleEditor from './components/SubtitleEditor';
 import { StyleType, STYLE_CONFIGS } from '@/lib/prompts';
 
 export default function Home() {
@@ -26,17 +27,22 @@ export default function Home() {
   const [videoDuration, setVideoDuration] = useState(0);
   const [srtContent, setSrtContent] = useState('');
   const [currentSubtitleIndex, setCurrentSubtitleIndex] = useState(0);
+  const [subtitles, setSubtitles] = useState<NarrativeEntry[]>([]);
   const [cacheHit, setCacheHit] = useState(false);
-  
+
   const videoProcessorRef = useRef<VideoProcessor | null>(null);
   const cacheManagerRef = useRef<CacheManager | null>(null);
 
-  // 初始化
+  const styles = [
+    { id: 'casual', ...STYLE_CONFIGS['casual'] },
+    { id: 'beginner', ...STYLE_CONFIGS['beginner'] },
+    { id: 'literary', ...STYLE_CONFIGS['literary'] }
+  ];
+
   useEffect(() => {
     videoProcessorRef.current = new VideoProcessor();
     cacheManagerRef.current = new CacheManager();
 
-    // 清理过期缓存
     if (cacheManagerRef.current) {
       cacheManagerRef.current.cleanExpiredCache().catch(err => {
         console.error('Failed to clean expired cache:', err);
@@ -62,26 +68,22 @@ export default function Home() {
       setAnalysisResult(null);
       setExtractedFrames([]);
       setSrtContent('');
+      setSubtitles([]);
 
       // 检查缓存
       if (cacheManagerRef.current) {
         const cachedResult = await cacheManagerRef.current.getAnalysisResult(file);
-        const cachedFrames = await cacheManagerRef.current.getFrames(file);
-
-        if (cachedResult && cachedFrames && cachedFrames.length > 0) {
+        
+        if (cachedResult && cachedResult.video_narrative) {
           console.log('✅ Found cached result, skipping analysis');
           setCacheHit(true);
           setAnalysisResult(cachedResult);
-          setExtractedFrames(cachedFrames);
-          
-          const frameDuration = cachedFrames.length > 0 ? (cachedResult as any).duration || (file.size / 100000) : 2.0;
-          const srtContent = resultToSRT(cachedResult, frameDuration);
-          setSrtContent(srtContent);
+          setSubtitles(cachedResult.video_narrative);
           
           setProcessingProgress({
             status: 'complete',
-            current: cachedFrames.length,
-            total: cachedFrames.length,
+            current: cachedResult.video_narrative.length,
+            total: cachedResult.video_narrative.length,
             message: `Loaded from cache (${cachedResult.mode || 'normal'} style)`
           });
           return;
@@ -92,7 +94,6 @@ export default function Home() {
     }
   }, []);
 
-  // 处理视频
   const processVideo = async (skipCache: boolean = false) => {
     if (!videoFile || !videoProcessorRef.current || !cacheManagerRef.current) {
       setProcessingProgress({
@@ -107,33 +108,37 @@ export default function Home() {
     try {
       console.log('🎬 Starting video processing...');
       
-      // 步骤 1: 检查缓存（除非跳过）
       let frames = extractedFrames;
       let duration = videoDuration;
+      let result = analysisResult;
 
+      // 步骤 1: 检查缓存（除非跳过）
       if (!skipCache && !cacheHit) {
         const cachedFrames = await cacheManagerRef.current.getFrames(videoFile);
+        const cachedAnalysis = await cacheManagerRef.current.getAnalysisResult(videoFile);
         
         if (cachedFrames && cachedFrames.length > 0) {
           console.log('✅ Found cached frames, skipping extraction');
           frames = cachedFrames;
-          duration = (await cacheManagerRef.current.getAnalysisResult(videoFile) as any)?.duration || (videoFile.size / 100000);
+          duration = (cachedAnalysis as any)?.duration || (videoFile.size / 100000);
           setExtractedFrames(frames);
           setVideoDuration(duration);
-
+          
           setProcessingProgress({
             status: 'analyzing',
             current: 0,
             total: frames.length,
-            message: `Analyzing frames with ${selectedStyle} style...`
+            message: 'Analyzing frames with AI (cached)...'
           });
 
-          // 步骤 2: AI 分析
+          // 使用缓存的帧进行分析
           const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
           
           const response = await fetch('/api/analyze', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+            },
             body: JSON.stringify({
               frames: framesBase64,
               useSlidingWindow,
@@ -148,13 +153,15 @@ export default function Home() {
           const data = await response.json();
 
           if (data.success && data.data) {
-            console.log('✅ Analysis complete');
+            console.log('✅ Analysis complete (from cached frames)');
+            result = data.data;
             
             const frameDuration = frames.length > 0 ? duration / frames.length : 0;
             const srtContent = resultToSRT(data.data, frameDuration);
             setSrtContent(srtContent);
-
-            // 保存到缓存
+            setSubtitles(data.data.video_narrative);
+            
+            // 保存新的分析结果到缓存
             await cacheManagerRef.current.saveAnalysisResult(videoFile, data.data);
 
             setAnalysisResult(data.data);
@@ -167,78 +174,82 @@ export default function Home() {
           } else {
             throw new Error(data.error || 'Analysis failed');
           }
+        }
+      }
+
+      // 如果没有缓存，提取帧
+      if (!frames || frames.length === 0) {
+        console.log('📸 No cached frames, extracting...');
+        
+        setProcessingProgress({
+          status: 'extracting',
+          current: 0,
+          total: 0,
+          message: 'Extracting frames from video...'
+        });
+
+        const extractionResult = await videoProcessorRef.current.extractFrames(
+          videoFile,
+          10 // 默认提取 10 帧
+        );
+
+        frames = extractionResult.frames;
+        duration = extractionResult.duration;
+        setExtractedFrames(frames);
+        setVideoDuration(duration);
+
+        // 保存到缓存
+        await cacheManagerRef.current.saveFrames(videoFile, frames, duration);
+
+        console.log(`✅ Extracted ${frames.length} frames, duration: ${duration}s`);
+
+        setProcessingProgress({
+          status: 'analyzing',
+          current: 0,
+          total: frames.length,
+          message: `Analyzing frames with ${selectedStyle} style...`
+        });
+
+        const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
+        
+        const response = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            frames: framesBase64,
+            useSlidingWindow,
+            style: selectedStyle
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Analysis failed: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          console.log('✅ Analysis complete');
+          result = data.data;
+          
+          const frameDuration = frames.length > 0 ? duration / frames.length : 0;
+          const srtContent = resultToSRT(data.data, frameDuration);
+          setSrtContent(srtContent);
+          setSubtitles(data.data.video_narrative);
+          
+          await cacheManagerRef.current.saveAnalysisResult(videoFile, data.data);
+
+          setAnalysisResult(data.data);
+          setProcessingProgress({
+            status: 'complete',
+            current: frames.length,
+            total: frames.length,
+            message: `Analysis complete! Style: ${selectedStyle}`
+          });
         } else {
-          console.log('📸 No cached frames, extracting...');
-          
-          // 抽取帧
-          setProcessingProgress({
-            status: 'extracting',
-            current: 0,
-            total: 0,
-            message: 'Extracting frames from video...'
-          });
-
-          const extractionResult = await videoProcessorRef.current.extractFrames(
-            videoFile,
-            10
-          );
-
-          frames = extractionResult.frames;
-          duration = extractionResult.duration;
-          setExtractedFrames(frames);
-          setVideoDuration(duration);
-
-          console.log(`✅ Extracted ${frames.length} frames, duration: ${duration}s`);
-
-          // 保存到缓存
-          await cacheManagerRef.current.saveFrames(videoFile, frames, duration);
-
-          // 步骤 2: AI 分析
-          setProcessingProgress({
-            status: 'analyzing',
-            current: 0,
-            total: frames.length,
-            message: `Analyzing frames with ${selectedStyle} style...`
-          });
-
-          const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
-          
-          const response = await fetch('/api/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              frames: framesBase64,
-              useSlidingWindow,
-              style: selectedStyle
-            })
-          });
-
-          if (!response.ok) {
-            throw new Error(`Analysis failed: ${response.statusText}`);
-          }
-
-          const data = await response.json();
-
-          if (data.success && data.data) {
-            console.log('✅ Analysis complete');
-            
-            const frameDuration = frames.length > 0 ? duration / frames.length : 0;
-            const srtContent = resultToSRT(data.data, frameDuration);
-            setSrtContent(srtContent);
-
-            // 保存到缓存
-            await cacheManagerRef.current.saveAnalysisResult(videoFile, data.data);
-
-            setAnalysisResult(data.data);
-            setProcessingProgress({
-              status: 'complete',
-              current: frames.length,
-              total: frames.length,
-              message: `Analysis complete! Style: ${selectedStyle}`
-            });
-          } else {
-            throw new Error(data.error || 'Analysis failed');
-          }
+          throw new Error(data.error || 'Analysis failed');
         }
       }
 
@@ -260,35 +271,32 @@ export default function Home() {
     });
   };
 
-  // 重新生成字幕（使用缓存）
-  const handleRegenerate = () => {
-    if (!videoFile || !extractedFrames || extractedFrames.length === 0) {
-      alert('Please upload and analyze a video first');
-      return;
-    }
-
-    console.log('🔄 Regenerating subtitles from cache...');
-    setProcessingProgress({
-      status: 'analyzing',
-      current: 0,
-      total: extractedFrames.length,
-      message: 'Regenerating subtitles from cached frames...'
+  const handleSubtitleUpdate = useCallback((index: number, newText: string) => {
+    console.log(`📝 Updating subtitle ${index}: ${newText}`);
+    
+    setSubtitles(prevSubtitles => {
+      const updated = [...prevSubtitles];
+      if (index >= 0 && index < updated.length) {
+        updated[index] = {
+          ...updated[index],
+          sentence: newText
+        };
+      }
+      return updated;
     });
-
-    // 直接使用缓存中的分析结果
+    
+    // 更新 SRT 内容
     if (analysisResult && analysisResult.video_narrative) {
-      const frameDuration = videoDuration > 0 ? videoDuration / extractedFrames.length : 2.0;
-      const srtContent = resultToSRT(analysisResult, frameDuration);
-      setSrtContent(srtContent);
-
-      setProcessingProgress({
-        status: 'complete',
-        current: extractedFrames.length,
-        total: extractedFrames.length,
-        message: 'Subtitles regenerated from cache!'
-      });
+      const frameDuration = videoDuration > 0 && extractedFrames.length > 0
+        ? videoDuration / extractedFrames.length
+        : 2.0;
+      const newSrt = resultToSRT({
+        ...analysisResult,
+        video_narrative: subtitles
+      }, frameDuration);
+      setSrtContent(newSrt);
     }
-  };
+  }, [analysisResult, videoDuration, extractedFrames]);
 
   const handleVocabularyClick = (vocab: Vocabulary) => {
     setSelectedVocabulary(vocab);
@@ -296,11 +304,16 @@ export default function Home() {
   };
 
   const handleDownloadSRT = () => {
-    if (analysisResult && analysisResult.video_narrative) {
+    if (subtitles && subtitles.length > 0) {
       const frameDuration = videoDuration > 0 && extractedFrames.length > 0
         ? videoDuration / extractedFrames.length
         : 2.0;
-      downloadSRT(analysisResult, frameDuration);
+      const result = {
+        video_narrative: subtitles,
+        mode: useSlidingWindow ? 'sliding_window' : 'normal',
+        total_frames: subtitles.length
+      };
+      downloadSRT(result, frameDuration);
     }
   };
 
@@ -308,12 +321,6 @@ export default function Home() {
     setShowWordExplanation(false);
     setSelectedVocabulary(null);
   };
-
-  const styles = [
-    { id: 'casual', ...STYLE_CONFIGS['casual'] },
-    { id: 'beginner', ...STYLE_CONFIGS['beginner'] },
-    { id: 'literary', ...STYLE_CONFIGS['literary'] }
-  ];
 
   const getStatusIcon = () => {
     switch (processingProgress.status) {
@@ -372,7 +379,7 @@ export default function Home() {
                 IndexedDB Caching
               </span>
               <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-xs font-medium">
-                Three Caption Styles
+                Online Subtitle Editor
               </span>
             </div>
           </header>
@@ -468,10 +475,10 @@ export default function Home() {
               <div className="flex gap-4">
                 <button
                   onClick={handleAnalyze}
-                  disabled={!videoFile || processingProgress.status !== 'idle' || processingProgress.status === 'analyzing'}
+                  disabled={!videoFile || processingProgress.status !== 'idle'}
                   className="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-semibold text-lg
-                           hover:bg-indigo-700 transition-colors disabled:bg-gray-400
-                           disabled:cursor-not-allowed"
+                         hover:bg-indigo-700 transition-colors disabled:bg-gray-400
+                         disabled:cursor-not-allowed"
                 >
                   {processingProgress.status === 'analyzing' ? (
                     <span className="flex items-center justify-center">
@@ -483,9 +490,9 @@ export default function Home() {
                   )}
                 </button>
 
-                {analysisResult && extractedFrames.length > 0 && (
+                {analysisResult && subtitles.length > 0 && (
                   <button
-                    onClick={handleRegenerate}
+                    onClick={() => processVideo(true)}
                     disabled={processingProgress.status !== 'idle'}
                     className="flex-1 bg-green-600 text-white py-4 rounded-xl font-semibold text-lg
                              hover:bg-green-700 transition-colors disabled:bg-gray-400
@@ -549,50 +556,19 @@ export default function Home() {
             </div>
           </div>
 
-          {analysisResult && analysisResult.video_narrative && (
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-semibold text-gray-800">
-                  📊 Analysis Results
-                </h2>
-                <div className="flex items-center space-x-4">
-                  {cacheHit && (
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                      🗄️ Cache Hit
-                    </span>
-                  )}
-                  {analysisResult.style && (
-                    <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
-                      {analysisResult.style} Style
-                    </span>
-                  )}
-                  {analysisResult.mode && (
-                    <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-                      {analysisResult.mode}
-                    </span>
-                  )}
-                  {srtContent && (
-                    <button
-                      onClick={handleDownloadSRT}
-                      className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
-                    >
-                      📥 Download SRT
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
+          {analysisResult && subtitles.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                {/* Video Player */}
+                <div className="bg-white rounded-2xl shadow-xl p-6">
                   <VideoPlayer 
                     videoUrl={extractedFrames.length > 0 ? extractedFrames[0].imageUrl : null}
                     currentTime={0}
-                    srtContent={srtContent}
                     onTimeUpdate={(time) => {
-                      if (analysisResult.video_narrative && analysisResult.video_narrative.length > 0) {
+                      if (subtitles && subtitles.length > 0) {
                         const frameIndex = Math.min(
-                          Math.floor(time / (videoDuration / extractedFrames.length)),
-                          analysisResult.video_narrative.length - 1
+                          Math.floor(time / (videoDuration / subtitles.length)),
+                          subtitles.length - 1
                         );
                         setCurrentSubtitleIndex(frameIndex);
                       }
@@ -600,124 +576,155 @@ export default function Home() {
                   />
                 </div>
 
-                <div className="lg:col-span-1 space-y-4">
-                  <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 border border-indigo-200">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                      📈 Statistics
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-600">Total Frames:</span>
-                        <span className="font-semibold text-gray-800">
-                          {analysisResult.total_frames || extractedFrames.length}
+                {/* Subtitle Editor */}
+                <div className="bg-white rounded-2xl shadow-xl p-6">
+                  <SubtitleEditor 
+                    subtitles={subtitles}
+                    currentSubtitleIndex={currentSubtitleIndex}
+                    onUpdateSubtitle={handleSubtitleUpdate}
+                  />
+                </div>
+              </div>
+
+              {/* Analysis Results */}
+              <div className="lg:col-span-1 space-y-4">
+                <div className="bg-white rounded-2xl shadow-xl p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-semibold text-gray-800">
+                      📊 Analysis
+                    </h2>
+                    <div className="flex items-center space-x-4">
+                      {cacheHit && (
+                        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                          🗄️ Cache
                         </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Total Duration:</span>
-                        <span className="font-semibold text-gray-800">
-                          {videoDuration.toFixed(1)}s
+                      )}
+                      {analysisResult.style && (
+                        <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-medium">
+                          {analysisResult.style}
                         </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Frame Interval:</span>
-                        <span className="font-semibold text-gray-800">
-                          {(videoDuration / extractedFrames.length).toFixed(2)}s
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-gray-600">Total Vocab:</span>
-                        <span className="font-semibold text-gray-800">
-                          {analysisResult.video_narrative.reduce((sum, entry) => 
-                            sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0), 
-                            0)}
-                        </span>
-                      </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                      📝 Video Narrative
-                    </h3>
-                    
-                    {analysisResult.video_narrative.map((entry, index) => {
-                      const isActive = index === currentSubtitleIndex;
-
-                      return (
-                        <div 
-                          key={entry.frame_index}
-                          className={`p-4 rounded-xl border transition-all ${
-                            isActive 
-                              ? 'border-indigo-500 bg-indigo-50' 
-                              : 'border-gray-200 hover:border-indigo-300'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <span className="text-xs font-semibold text-indigo-600">
-                                Frame {entry.frame_index}
-                              </span>
-                              <span className={`text-xs px-2 py-1 rounded ${
-                                entry.core_word ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {entry.timestamp}
-                              </span>
-                            </div>
-                            {entry.core_word && (
-                              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
-                                Core: {entry.core_word}
-                              </span>
-                            )}
-                          </div>
-
-                          {entry.context_continuity && (
-                            <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
-                              <p className="text-xs text-gray-600 mb-1">
-                                🔗 Previous Context:
-                              </p>
-                              <p className="text-sm text-gray-700 italic">
-                                {entry.context_continuity.previous_sentence}
-                              </p>
-                            </div>
-                          )}
-
-                          <p className="text-lg text-gray-800 mb-3 leading-relaxed">
-                            {entry.sentence}
-                          </p>
-
-                          {entry.advanced_vocabulary && entry.advanced_vocabulary.length > 0 && (
-                            <div>
-                              <p className="text-sm font-semibold text-gray-600 mb-2">
-                                Advanced Vocabulary ({entry.vocabulary_count} words):
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {entry.advanced_vocabulary.slice(0, 10).map((vocab, vIndex) => (
-                                  <span
-                                    key={vIndex}
-                                    onClick={() => handleVocabularyClick(vocab)}
-                                    className={`inline-flex items-center space-x-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
-                                      vocab.level === 'C1/C2' 
-                                          ? 'bg-red-100 text-red-800 hover:bg-red-200' 
-                                          : vocab.level === 'B2'
-                                              ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                    }`}
-                                    title={`${vocab.word} (${vocab.level})`}
-                                  >
-                                    <span className="font-medium">
-                                      {vocab.word}
-                                    </span>
-                                    <span className="text-xs opacity-75">
-                                      ({vocab.level})
-                                    </span>
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                    <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                        📈 Statistics
+                      </h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Total Frames:</span>
+                          <span className="font-semibold text-gray-800">
+                            {analysisResult.total_frames || subtitles.length}
+                          </span>
                         </div>
-                      );
-                    })}
+                        <div>
+                          <span className="text-gray-600">Duration:</span>
+                          <span className="font-semibold text-gray-800">
+                            {videoDuration.toFixed(1)}s
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Frame Interval:</span>
+                          <span className="font-semibold text-gray-800">
+                            {(videoDuration / subtitles.length).toFixed(2)}s
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Total Vocab:</span>
+                          <span className="font-semibold text-gray-800">
+                            {subtitles.reduce((sum, entry) => 
+                              sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0), 
+                              0)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                        📝 Narrative
+                      </h3>
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {subtitles.map((entry, index) => {
+                          const isActive = index === currentSubtitleIndex;
+                          const modifiedEntry = entry;
+
+                          return (
+                            <div 
+                              key={entry.frame_index}
+                              className={`p-3 rounded-lg border transition-all ${
+                                isActive 
+                                  ? 'border-indigo-500 bg-indigo-50' 
+                                  : 'border-gray-200 hover:border-indigo-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs font-semibold text-indigo-600">
+                                    Frame {entry.frame_index}
+                                  </span>
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    entry.core_word ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'
+                                  }`}>
+                                    {entry.timestamp}
+                                  </span>
+                                </div>
+                                {entry.core_word && (
+                                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                                    {entry.core_word}
+                                  </span>
+                                )}
+                              </div>
+
+                              <p className="text-base text-gray-800 leading-relaxed">
+                                {entry.sentence}
+                              </p>
+
+                              {entry.advanced_vocabulary && entry.advanced_vocabulary.length > 0 && (
+                                <div>
+                                  <p className="text-xs font-semibold text-gray-600 mb-2">
+                                    Advanced Vocabulary ({entry.vocabulary_count} words):
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {entry.advanced_vocabulary.slice(0, 8).map((vocab, vIndex) => (
+                                      <span
+                                        key={vIndex}
+                                        onClick={() => handleVocabularyClick(vocab)}
+                                        className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg cursor-pointer transition-all ${
+                                          vocab.level === 'C1/C2' 
+                                                ? 'bg-red-100 text-red-800 hover:bg-red-200' 
+                                                : vocab.level === 'B2'
+                                                    ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                        }`}
+                                      >
+                                        <span className="text-xs font-medium">
+                                          {vocab.word}
+                                        </span>
+                                      </span>
+                                    ))}
+                                    {entry.advanced_vocabulary.length > 8 && (
+                                      <span className="text-xs text-gray-500 italic">
+                                        +{entry.advanced_vocabulary.length - 8}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleDownloadSRT}
+                      className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors"
+                    >
+                      📥 Download SRT
+                    </button>
                   </div>
                 </div>
               </div>
