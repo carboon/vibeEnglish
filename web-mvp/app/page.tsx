@@ -12,6 +12,7 @@ export default function Home() {
     message: 'Ready to analyze'
   });
   const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [useSlidingWindow, setUseSlidingWindow] = useState(true);
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -23,7 +24,14 @@ export default function Home() {
         totalFrames: 0,
         message: `Loaded: ${file.name}`
       });
+      setResult(null); // 清除之前的结果
     }
+  };
+
+  const extractFramesFromVideo = async (videoFile: File): Promise<string[]> => {
+    // 模拟抽帧（实际会使用 FFmpeg.wasm）
+    // 这里暂时返回空数组，让后端 Python 脚本处理
+    return [];
   };
 
   const handleAnalyze = async () => {
@@ -40,42 +48,46 @@ export default function Home() {
     });
 
     try {
-      // 模拟分析（实际会调用 API）
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 提取帧（模拟）
+      const frames = await extractFramesFromVideo(videoFile);
 
-      // 这里会调用 API: POST /api/analyze
-      setProgress({
-        status: 'complete',
-        currentFrame: 5,
-        totalFrames: 5,
-        message: 'Analysis complete!'
+      // 调用 API 分析
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          frames,
+          useSlidingWindow
+        })
       });
 
-      // 模拟结果
-      const mockResult: AnalysisResult = {
-        video_narrative: [
-          {
-            frame_index: 0,
-            timestamp: '00:00',
-            sentence: 'A plump white rabbit rests on a grassy lawn...',
-            advanced_vocabulary: [],
-            core_word: '',
-            vocabulary_count: 11
-          }
-        ],
-        mode: 'sliding_window',
-        total_frames: 5,
-        context_type: 'narrative_continuity'
-      };
+      if (!response.ok) {
+        throw new Error('Analysis failed');
+      }
 
-      setResult(mockResult);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        setProgress({
+          status: 'complete',
+          currentFrame: data.data.total_frames || 0,
+          totalFrames: data.data.total_frames || 0,
+          message: `Analysis complete! Mode: ${data.data.mode || 'normal'}`
+        });
+
+        setResult(data.data);
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
 
     } catch (error) {
       setProgress({
         status: 'error',
         currentFrame: 0,
         totalFrames: 0,
-        message: 'Analysis failed'
+        message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       });
       console.error(error);
     }
@@ -126,6 +138,24 @@ export default function Home() {
                 </label>
               </div>
 
+              {/* Settings */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useSlidingWindow}
+                    onChange={(e) => setUseSlidingWindow(e.target.checked)}
+                    className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
+                  />
+                  <span className="text-gray-700 font-medium">
+                    Use Sliding Window (Narrative Continuity) 📖
+                  </span>
+                </label>
+                <p className="text-sm text-gray-500 mt-2 ml-8">
+                  Maintains story flow and consistent terminology across frames
+                </p>
+              </div>
+
               {/* Analyze Button */}
               <button
                 onClick={handleAnalyze}
@@ -174,9 +204,16 @@ export default function Home() {
           {/* Results Section */}
           {result && result.video_narrative && (
             <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                📊 Analysis Results
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  📊 Analysis Results
+                </h2>
+                {result.mode && (
+                  <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                    Mode: {result.mode}
+                  </span>
+                )}
+              </div>
 
               <div className="space-y-4">
                 {result.video_narrative.map((entry) => (
@@ -195,22 +232,37 @@ export default function Home() {
                       )}
                     </div>
 
+                    {/* 上下文提示 */}
+                    {entry.context_continuity && (
+                      <div className="bg-blue-50 rounded-lg p-3 mb-3 border border-blue-200">
+                        <p className="text-xs text-gray-600 mb-1">
+                          🔗 Previous Context:
+                        </p>
+                        <p className="text-sm text-gray-700 italic">
+                          {entry.context_continuity.previous_sentence}
+                        </p>
+                      </div>
+                    )}
+
                     <p className="text-lg text-gray-800 mb-3">
                       {entry.sentence}
                     </p>
 
-                    {entry.advanced_vocabulary.length > 0 && (
+                    {entry.advanced_vocabulary && entry.advanced_vocabulary.length > 0 && (
                       <div>
                         <p className="text-sm font-semibold text-gray-600 mb-2">
-                          Advanced Vocabulary ({entry.vocabulary_count} words):
+                          Advanced Vocabulary ({entry.vocabulary_count || entry.advanced_vocabulary.length} words):
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {entry.advanced_vocabulary.slice(0, 5).map((vocab) => (
+                          {entry.advanced_vocabulary.slice(0, 8).map((vocab) => (
                             <span
                               key={vocab.word}
-                              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium"
+                              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg text-sm font-medium
+                                       hover:bg-blue-200 transition-colors cursor-pointer"
+                              title={`${vocab.level} | ${vocab.frequency}`}
                             >
-                              {vocab.word} <span className="text-xs ml-1 opacity-75">({vocab.level})</span>
+                              {vocab.word}
+                              <span className="text-xs ml-1 opacity-75">({vocab.level})</span>
                             </span>
                           ))}
                         </div>
@@ -218,6 +270,27 @@ export default function Home() {
                     )}
                   </div>
                 ))}
+              </div>
+
+              {/* 统计 */}
+              <div className="mt-6 bg-indigo-50 rounded-xl p-6 border border-indigo-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  📈 Statistics
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Total Frames:</span>
+                    <span className="font-semibold text-gray-800 ml-2">
+                      {result.total_frames || result.video_narrative.length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Total Vocabulary:</span>
+                    <span className="font-semibold text-gray-800 ml-2">
+                      {result.video_narrative.reduce((sum, entry) => sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0), 0)}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}
