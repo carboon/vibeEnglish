@@ -1,0 +1,157 @@
+{
+  "video_narrative": [
+    {
+      "frame_index": 0,
+      "timestamp": "00:00",
+      "sentence": "A plump white rabbit rests on a grassy lawn.",
+      "advanced_vocabulary": [
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 5.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "grass",
+          "lemma": "grass",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B1/B2",
+          "frequency": "Zipf: 6.0",
+          "pos": "NOUN"
+        }
+      ],
+      "core_word": "rabbit",
+      "vocabulary_count": 3
+    },
+    {
+      "frame_index": 1,
+      "timestamp": "00:00",
+      "sentence": "The rabbit stands up and looks around.",
+      "advanced_vocabulary": [
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 5.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "grass",
+          "lemma": "grass",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B1/B2",
+          "frequency": "Zipf: 6.0",
+          "pos": "NOUN"
+        }
+      ],
+      "core_word": "",
+      "vocabulary_count": 3
+    },
+    {
+      "frame_index": 2,
+      "timestamp": "00:00",
+      "sentence": "A butterfly lands gently on its head.",
+      "advanced_vocabulary": [
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 5.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "grass",
+          "lemma": "grass",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B1/B2",
+          "frequency": "Zipf: 6.0",
+          "pos": "NOUN"
+        }
+      ],
+      "core_word": "",
+      "vocabulary_count": 3
+    },
+    {
+      "frame_index": 3,
+      "timestamp": "00:00",
+      "sentence": "The rabbit hops away quickly.",
+      "advanced_vocabulary": [
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 5.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "grass",
+          "lemma": "grass",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B1/B2",
+          "frequency": "Zipf: 6.0",
+          "pos": "NOUN"
+        }
+      ],
+      "core_word": "",
+      "vocabulary_count": 3
+    },
+    {
+      "frame_index": 4,
+      "timestamp": "00:00",
+      "sentence": "It disappears into the meadow.",
+      "advanced_vocabulary": [
+        {
+          "word": "rabbit",
+          "lemma": "rabbit",
+          "level": "B1/B2",
+          "frequency": "Zipf: 5.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "grass",
+          "lemma": "grass",
+          "level": "B1/B2",
+          "frequency": "Zipf: 4.5",
+          "pos": "NOUN"
+        },
+        {
+          "word": "butterfly",
+          "lemma": "butterfly",
+          "level": "B1/B2",
+          "frequency": "Zipf: 6.0",
+          "pos": "NOUN"
+        }
+      ],
+      "core_word": "",
+      "vocabulary_count": 3
+    }
+  ],
+  "mode": "normal",
+  "total_frames": 5,
+  "style": "casual"
+}
