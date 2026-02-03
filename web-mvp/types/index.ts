@@ -2,6 +2,9 @@
  * 类型定义
  */
 
+// 风格类型
+export type StyleType = 'casual' | 'beginner' | 'literary';
+
 // 视频帧
 export interface VideoFrame {
   id: string;

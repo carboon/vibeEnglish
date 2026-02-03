@@ -5,10 +5,11 @@
 
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { 
-  findCurrentSRTEntry, 
-  calculateSRTProgress 
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  findCurrentSRTEntry,
+  calculateSRTProgress,
+  parseSRT
 } from '@/lib/srt';
 
 interface VideoPlayerProps {
@@ -31,33 +32,45 @@ export default function VideoPlayer({
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
-  const [currentSRTEntry, setCurrentSRTEntry] = useState<{ id: number; startTime: number; endTime: number; text: string } | null>(null);
+
+  // 使用 ref 来跟踪 SRT 条目，避免 cascading renders
+  const srtEntryRef = useRef<{ id: number; startTime: number; endTime: number; text: string } | null>(null);
   const [srtProgress, setSRTProgress] = useState(0);
 
-  // 解析 SRT 字幕
-  useEffect(() => {
-    if (!srtContent) {
-      setCurrentSRTEntry(null);
-      return;
-    }
+  // 使用 useMemo 解析 SRT 内容
+  const parsedSRT = useMemo(() => {
+    if (!srtContent) return null;
+    return parseSRT(srtContent);
+  }, [srtContent]);
 
-    const parsed = parseSRT(srtContent);
-    setCurrentSRTEntry(findCurrentSRTEntry(currentTime, parsed.entries));
-    setSRTProgress(calculateSRTProgress(currentTime, currentSRTEntry));
-  }, [srtContent, currentTime]);
+  // 计算当前 SRT 条目（不使用 useState 来避免 cascading renders）
+  const currentSRTEntry = useMemo(() => {
+    if (!parsedSRT) return null;
+    return findCurrentSRTEntry(currentTime, parsedSRT.entries);
+  }, [parsedSRT, currentTime]);
+
+  // 更新 ref 和进度
+  useEffect(() => {
+    srtEntryRef.current = currentSRTEntry;
+    // 使用 setTimeout 将状态更新移出同步阶段
+    const newProgress = currentSRTEntry
+      ? calculateSRTProgress(currentTime, currentSRTEntry)
+      : 0;
+    setTimeout(() => {
+      setSRTProgress(newProgress);
+    }, 0);
+  }, [currentSRTEntry, currentTime]);
 
   // 同步外部时间（用于字幕同步）
+  const prevExternalTimeRef = useRef(externalCurrentTime);
   useEffect(() => {
-    if (externalCurrentTime !== currentTime && videoRef.current) {
+    if (externalCurrentTime !== prevExternalTimeRef.current && videoRef.current) {
+      prevExternalTimeRef.current = externalCurrentTime;
       videoRef.current.currentTime = externalCurrentTime;
-      setCurrentTime(externalCurrentTime);
-      
-      // 更新字幕状态
-      if (srtContent) {
-        const parsed = parseSRT(srtContent);
-        setCurrentSRTEntry(findCurrentSRTEntry(externalCurrentTime, parsed.entries));
-        setSRTProgress(calculateSRTProgress(externalCurrentTime, currentSRTEntry));
-      }
+      // 使用 setTimeout 将状态更新移出同步阶段
+      setTimeout(() => {
+        setCurrentTime(externalCurrentTime);
+      }, 0);
     }
   }, [externalCurrentTime]);
 
@@ -65,17 +78,9 @@ export default function VideoPlayer({
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
-      
-      // 更新字幕状态
-      if (srtContent) {
-        const parsed = parseSRT(srtContent);
-        setCurrentSRTEntry(findCurrentSRTEntry(time, parsed.entries));
-        setSRTProgress(calculateSRTProgress(time, currentSRTEntry));
-      }
-      
       onTimeUpdate?.(time);
     }
-  }, [srtContent, onTimeUpdate]);
+  }, [onTimeUpdate]);
 
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
@@ -114,7 +119,7 @@ export default function VideoPlayer({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, x / rect.width));
-    
+
     if (videoRef.current) {
       videoRef.current.currentTime = percentage * duration;
     }
@@ -145,7 +150,7 @@ export default function VideoPlayer({
 
       {/* 字幕覆盖层 */}
       {currentSRTEntry && (
-        <div 
+        <div
           className="absolute bottom-20 left-0 right-0 px-4 py-3 pointer-events-none"
           style={{
             textShadow: '0px 2px 8px rgba(0, 0, 0, 0.8)',
@@ -157,14 +162,14 @@ export default function VideoPlayer({
                 {currentSRTEntry.text}
               </p>
             </div>
-            
+
             {/* 进度指示器 */}
             <div className="flex items-center justify-center mt-2 space-x-2">
               <span className="text-sm text-gray-300">
                 字幕 {currentSRTEntry.id}
               </span>
               <div className="flex-1 bg-gray-700 rounded-full h-1.5">
-                <div 
+                <div
                   className="bg-white h-full rounded-full transition-all duration-300"
                   style={{ width: `${srtProgress}%` }}
                 />
@@ -208,8 +213,8 @@ export default function VideoPlayer({
             {/* 字幕状态 */}
             {srtContent && currentSRTEntry && (
               <span className="bg-green-600 text-white text-xs px-2 py-1 rounded">
-                {currentSRTEntry.id}/{currentSRTEntry.text.length > 30 
-                  ? '30+' 
+                {currentSRTEntry.id}/{currentSRTEntry.text.length > 30
+                  ? '30+'
                   : currentSRTEntry.text.length}字
               </span>
             )}

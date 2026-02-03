@@ -7,6 +7,9 @@ import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { toBlobURL } from '@ffmpeg/util';
 import { VideoFrame } from '@/types';
 
+// Re-export VideoFrame for convenience
+export type { VideoFrame };
+
 export class VideoProcessor {
   private ffmpeg: FFmpeg | null = null;
   private loaded: boolean = false;
@@ -15,7 +18,7 @@ export class VideoProcessor {
     if (this.loaded && this.ffmpeg) return;
 
     console.log('🔄 Initializing FFmpeg.wasm...');
-    
+
     try {
       this.ffmpeg = new FFmpeg();
 
@@ -43,7 +46,7 @@ export class VideoProcessor {
 
       this.loaded = true;
       console.log('✅ FFmpeg.wasm loaded successfully');
-      
+
     } catch (error) {
       console.error('Failed to load FFmpeg.wasm:', error);
       throw new Error(`FFmpeg initialization failed: ${error}`);
@@ -328,12 +331,12 @@ export class VideoProcessor {
 function calculateFrameDifference(frame1: Uint8Array, frame2: Uint8Array): number {
   // 简化版本：只比较部分像素
   const sampleSize = Math.min(frame1.length, 10000); // 采样 10k 像素
-  
+
   let diff = 0;
   for (let i = 0; i < sampleSize; i++) {
     diff += Math.abs(frame1[i] - frame2[i]);
   }
-  
+
   // 归一化到 0-255
   return diff / (sampleSize / 256);
 }

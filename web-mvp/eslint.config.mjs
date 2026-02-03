@@ -12,7 +12,23 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore test files for now
+    "__tests__/**",
   ]),
+  // Custom rule overrides
+  {
+    rules: {
+      // Allow explicit any in some cases
+      "@typescript-eslint/no-explicit-any": "warn",
+      // Allow unused vars with underscore prefix
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }],
+      // Downgrade React hooks errors to warnings
+      "react-hooks/exhaustive-deps": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

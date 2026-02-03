@@ -24,8 +24,19 @@ export function timestampToSRT(timestamp: string): string {
   const minutes = parseInt(parts[1] || '0');
   const seconds = parseInt(parts[2]?.split('.')[0] || '0');
 
-  const totalSeconds = hours * 3600 + minutes * 60 + seconds;  
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
   return formatSRTTime(totalSeconds, false);
+}
+
+/**
+ * 将时间戳字符串转换为秒数
+ */
+export function timestampToSeconds(timestamp: string): number {
+  const parts = timestamp.split(':');
+  const hours = parseInt(parts[0] || '0');
+  const minutes = parseInt(parts[1] || '0');
+  const seconds = parseInt(parts[2]?.split('.')[0] || '0');
+  return hours * 3600 + minutes * 60 + seconds;
 }
 
 /**
@@ -38,7 +49,7 @@ function adjustSentenceByStyle(sentence: string, style: StyleType): string {
   // - 日常口语：简化句子
   // - 入门风格：确保使用简单词汇
   // - 文学风格：增强文学表达
-  
+
   return sentence;
 }
 
@@ -59,10 +70,10 @@ export function resultToSRT(result: AnalysisResult, frameDuration: number = 2.0,
   narratives.forEach((entry, index) => {
     const id = index + 1;
     const startTime = entry.timestamp;
-    
+
     // 根据风格调整句子
     const adjustedSentence = adjustSentenceByStyle(entry.sentence, style || 'casual');
-    
+
     // 计算结束时间（当前帧开始时间 + 帧时长）
     const startSeconds = timestampToSeconds(startTime);
     const endSeconds = startSeconds + frameDuration;
@@ -97,7 +108,7 @@ export function generateSRTBlob(result: AnalysisResult, frameDuration: number = 
 export function downloadSRT(result: AnalysisResult, frameDuration: number = 2.0): void {
   const srtContent = resultToSRT(result, frameDuration);
   const blob = generateSRTBlob(result, frameDuration);
-  
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -124,7 +135,7 @@ export function parseSRT(srtContent: string): SRTParsed {
   const lines = srtContent.split('\n').filter(line => line.trim() !== '');
   const entries: SRTParsed['entries'] = [];
 
-  let currentEntry: { id: 0, startTime: 0, endTime: 0, text: '' } | null = null;
+  let currentEntry: { id: number, startTime: number, endTime: number, text: string } | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -149,18 +160,18 @@ export function parseSRT(srtContent: string): SRTParsed {
     }
 
     // 时间戳行 (00:00:03,500 --> 00:00:06,000)
-    if (/-->/).test(line)) {
+    if (/-->/.test(line)) {
       if (!currentEntry) continue;
 
       const [startTime, endTime] = line.split('-->').map(t => t.trim());
-      
+
       currentEntry.startTime = srtTimeToSeconds(startTime);
       currentEntry.endTime = srtTimeToSeconds(endTime);
       continue;
     }
 
     // 文本行
-    if (currentEntry && !(/^\d+$/.test(line)) && !(/-->/).test(line)) {
+    if (currentEntry && !(/^\d+$/.test(line)) && !(/-->/.test(line))) {
       currentEntry.text += (currentEntry.text ? ' ' : '') + line;
     }
   }
@@ -181,14 +192,18 @@ function srtTimeToSeconds(timeStr: string): number {
   const match = timeStr.match(/^(\d+):(\d+):(\d+)(,(\d+))?$/);
   if (!match) return 0;
 
-  const [, hours, minutes, seconds, ms] = match;  
-  const totalSeconds = 
-    parseInt(hours) * 3600 +
-    parseInt(minutes) * 60 +
-    parseInt(seconds) +
-    (ms ? parseInt(ms) / 1000 : 0);  
+  const hours = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const seconds = parseInt(match[3]);
+  const msStr = match[5]; // 第 5 个捕获组是毫秒数字
+  const totalSeconds =
+    hours * 3600 +
+    minutes * 60 +
+    seconds +
+    (msStr ? parseInt(msStr) / 1000 : 0);
   return totalSeconds;
 }
+
 
 /**
  * 查找当前时间对应的字幕条目
@@ -226,12 +241,12 @@ export function calculateSRTProgress(
  * @param seconds 秒数
  * @param includeMs 是否包含毫秒部分
  */
-function formatSRTTime(seconds: number, includeMs: boolean = false): string {
+export function formatSRTTime(seconds: number, includeMs: boolean = true): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
   const ms = Math.floor((seconds % 1) * 1000);
 
-  const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;  
+  const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   return includeMs ? `${timeStr},${String(ms).padStart(3, '0')}` : timeStr;
 }

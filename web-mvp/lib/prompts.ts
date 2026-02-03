@@ -104,6 +104,7 @@ ${vocabularyGuidelines}
  * 获取风格指导原则
  */
 function getStyleGuidelines(style: StyleType): string {
+  const styleConfig = STYLE_CONFIGS[style];
   const configs = {
     [StyleType.CASUAL]: {
       tone: 'friendly and conversational',
@@ -143,19 +144,21 @@ Examples:
 
   const config = configs[style];
   return `### Style Guidelines
-- Target Audience: ${config.targetAudience}
+- Target Audience: ${styleConfig.targetAudience}
 - Tone: ${config.tone}
 - Recommended Sentence Length: ${config.length}
 - Complexity Level: ${config.complexity}
-- Common Words: ${config.exampleWords.join(', ')}
+- Common Words: ${styleConfig.exampleWords.join(', ')}
 
 ${config.examples}`;
 }
+
 
 /**
  * 获取词汇指导原则
  */
 function getVocabularyGuidelines(style: StyleType): string {
+  const styleConfig = STYLE_CONFIGS[style];
   const configs = {
     [StyleType.CASUAL]: {
       level: 'A1/A2 (Basic - most common 2000 words)',
@@ -181,9 +184,10 @@ function getVocabularyGuidelines(style: StyleType): string {
   return `### Vocabulary Guidelines
 - CEFR Level Target: ${config.level}
 - Word Selection: ${config.selection}
-- Words to Avoid: ${config.avoidal}
+- Words to Avoid: ${config.avoidance}
 - Emphasis: ${config.emphasis}
 
 Style-Specific Vocabulary List:
-${config.exampleWords.map(word => `- ${word}`).join('\n')}`;
+${styleConfig.exampleWords.map((word: string) => `- ${word}`).join('\n')}`;
 }
+

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnalysisResult, Vocabulary, NarrativeEntry } from '@/types';
 import { VideoProcessor, type VideoFrame } from '@/lib/video';
-import { generateSRTBlob, downloadSRT, resultToSRT } from '@/lib/srt';
+import { downloadSRT, resultToSRT } from '@/lib/srt';
 import { CacheManager } from '@/lib/cache';
 import VideoPlayer from './components/VideoPlayer';
 import WordExplanation from './components/WordExplanation';
@@ -21,7 +21,7 @@ export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [showWordExplanation, setShowWordExplanation] = useState(false);
   const [selectedVocabulary, setSelectedVocabulary] = useState<Vocabulary | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<StyleType>('casual');
+  const [selectedStyle, setSelectedStyle] = useState<'casual' | 'beginner' | 'literary'>('casual');
   const [useSlidingWindow, setUseSlidingWindow] = useState(true);
   const [extractedFrames, setExtractedFrames] = useState<VideoFrame[]>([]);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -73,13 +73,13 @@ export default function Home() {
       // 检查缓存
       if (cacheManagerRef.current) {
         const cachedResult = await cacheManagerRef.current.getAnalysisResult(file);
-        
+
         if (cachedResult && cachedResult.video_narrative) {
           console.log('✅ Found cached result, skipping analysis');
           setCacheHit(true);
           setAnalysisResult(cachedResult);
           setSubtitles(cachedResult.video_narrative);
-          
+
           setProcessingProgress({
             status: 'complete',
             current: cachedResult.video_narrative.length,
@@ -107,7 +107,7 @@ export default function Home() {
 
     try {
       console.log('🎬 Starting video processing...');
-      
+
       let frames = extractedFrames;
       let duration = videoDuration;
       let result = analysisResult;
@@ -116,14 +116,14 @@ export default function Home() {
       if (!skipCache && !cacheHit) {
         const cachedFrames = await cacheManagerRef.current.getFrames(videoFile);
         const cachedAnalysis = await cacheManagerRef.current.getAnalysisResult(videoFile);
-        
+
         if (cachedFrames && cachedFrames.length > 0) {
           console.log('✅ Found cached frames, skipping extraction');
           frames = cachedFrames;
           duration = (cachedAnalysis as any)?.duration || (videoFile.size / 100000);
           setExtractedFrames(frames);
           setVideoDuration(duration);
-          
+
           setProcessingProgress({
             status: 'analyzing',
             current: 0,
@@ -133,7 +133,7 @@ export default function Home() {
 
           // 使用缓存的帧进行分析
           const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
-          
+
           const response = await fetch('/api/analyze', {
             method: 'POST',
             headers: {
@@ -155,12 +155,12 @@ export default function Home() {
           if (data.success && data.data) {
             console.log('✅ Analysis complete (from cached frames)');
             result = data.data;
-            
+
             const frameDuration = frames.length > 0 ? duration / frames.length : 0;
             const srtContent = resultToSRT(data.data, frameDuration);
             setSrtContent(srtContent);
             setSubtitles(data.data.video_narrative);
-            
+
             // 保存新的分析结果到缓存
             await cacheManagerRef.current.saveAnalysisResult(videoFile, data.data);
 
@@ -180,7 +180,7 @@ export default function Home() {
       // 如果没有缓存，提取帧
       if (!frames || frames.length === 0) {
         console.log('📸 No cached frames, extracting...');
-        
+
         setProcessingProgress({
           status: 'extracting',
           current: 0,
@@ -211,7 +211,7 @@ export default function Home() {
         });
 
         const framesBase64 = frames.map(f => f.imageUrl.split(',')[1] || '');
-        
+
         const response = await fetch('/api/analyze', {
           method: 'POST',
           headers: {
@@ -233,12 +233,12 @@ export default function Home() {
         if (data.success && data.data) {
           console.log('✅ Analysis complete');
           result = data.data;
-          
+
           const frameDuration = frames.length > 0 ? duration / frames.length : 0;
           const srtContent = resultToSRT(data.data, frameDuration);
           setSrtContent(srtContent);
           setSubtitles(data.data.video_narrative);
-          
+
           await cacheManagerRef.current.saveAnalysisResult(videoFile, data.data);
 
           setAnalysisResult(data.data);
@@ -273,7 +273,7 @@ export default function Home() {
 
   const handleSubtitleUpdate = useCallback((index: number, newText: string) => {
     console.log(`📝 Updating subtitle ${index}: ${newText}`);
-    
+
     setSubtitles(prevSubtitles => {
       const updated = [...prevSubtitles];
       if (index >= 0 && index < updated.length) {
@@ -284,7 +284,7 @@ export default function Home() {
       }
       return updated;
     });
-    
+
     // 更新 SRT 内容
     if (analysisResult && analysisResult.video_narrative) {
       const frameDuration = videoDuration > 0 && extractedFrames.length > 0
@@ -296,7 +296,7 @@ export default function Home() {
       }, frameDuration);
       setSrtContent(newSrt);
     }
-  }, [analysisResult, videoDuration, extractedFrames]);
+  }, [analysisResult, videoDuration, extractedFrames, subtitles]);
 
   const handleVocabularyClick = (vocab: Vocabulary) => {
     setSelectedVocabulary(vocab);
@@ -310,7 +310,7 @@ export default function Home() {
         : 2.0;
       const result = {
         video_narrative: subtitles,
-        mode: useSlidingWindow ? 'sliding_window' : 'normal',
+        mode: (useSlidingWindow ? 'sliding_window' : 'normal') as 'normal' | 'sliding_window',
         total_frames: subtitles.length
       };
       downloadSRT(result, frameDuration);
@@ -431,11 +431,10 @@ export default function Home() {
                         key={style.id}
                         onClick={() => setSelectedStyle(style.id as StyleType)}
                         disabled={processingProgress.status !== 'idle'}
-                        className={`w-full p-3 rounded-lg text-left transition-all ${
-                          selectedStyle === style.id 
-                            ? 'bg-indigo-600 text-white ring-2 ring-indigo-300' 
-                            : 'bg-white text-gray-700 hover:bg-indigo-50 ring-2 ring-transparent'
-                        }`}
+                        className={`w-full p-3 rounded-lg text-left transition-all ${selectedStyle === style.id
+                          ? 'bg-indigo-600 text-white ring-2 ring-indigo-300'
+                          : 'bg-white text-gray-700 hover:bg-indigo-50 ring-2 ring-transparent'
+                          }`}
                       >
                         <div className="font-medium mb-1">{style.name}</div>
                         <p className="text-xs text-gray-500">{style.description}</p>
@@ -526,9 +525,8 @@ export default function Home() {
                   {processingProgress.total > 0 && (
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div
-                        className={`h-3 rounded-full transition-all duration-300 ${
-                          processingProgress.status === 'complete' ? 'bg-green-500' : 'bg-indigo-600'
-                        }`}
+                        className={`h-3 rounded-full transition-all duration-300 ${processingProgress.status === 'complete' ? 'bg-green-500' : 'bg-indigo-600'
+                          }`}
                         style={{ width: `${(processingProgress.current / processingProgress.total) * 100}%` }}
                       />
                     </div>
@@ -561,7 +559,7 @@ export default function Home() {
               <div className="lg:col-span-2 space-y-6">
                 {/* Video Player */}
                 <div className="bg-white rounded-2xl shadow-xl p-6">
-                  <VideoPlayer 
+                  <VideoPlayer
                     videoUrl={extractedFrames.length > 0 ? extractedFrames[0].imageUrl : null}
                     currentTime={0}
                     onTimeUpdate={(time) => {
@@ -578,7 +576,7 @@ export default function Home() {
 
                 {/* Subtitle Editor */}
                 <div className="bg-white rounded-2xl shadow-xl p-6">
-                  <SubtitleEditor 
+                  <SubtitleEditor
                     subtitles={subtitles}
                     currentSubtitleIndex={currentSubtitleIndex}
                     onUpdateSubtitle={handleSubtitleUpdate}
@@ -634,8 +632,8 @@ export default function Home() {
                         <div>
                           <span className="text-gray-600">Total Vocab:</span>
                           <span className="font-semibold text-gray-800">
-                            {subtitles.reduce((sum, entry) => 
-                              sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0), 
+                            {subtitles.reduce((sum, entry) =>
+                              sum + (entry.vocabulary_count || entry.advanced_vocabulary?.length || 0),
                               0)}
                           </span>
                         </div>
@@ -649,25 +647,22 @@ export default function Home() {
                       <div className="space-y-2 max-h-[400px] overflow-y-auto">
                         {subtitles.map((entry, index) => {
                           const isActive = index === currentSubtitleIndex;
-                          const modifiedEntry = entry;
 
                           return (
-                            <div 
+                            <div
                               key={entry.frame_index}
-                              className={`p-3 rounded-lg border transition-all ${
-                                isActive 
-                                  ? 'border-indigo-500 bg-indigo-50' 
-                                  : 'border-gray-200 hover:border-indigo-300'
-                              }`}
+                              className={`p-3 rounded-lg border transition-all ${isActive
+                                ? 'border-indigo-500 bg-indigo-50'
+                                : 'border-gray-200 hover:border-indigo-300'
+                                }`}
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-2">
                                   <span className="text-xs font-semibold text-indigo-600">
                                     Frame {entry.frame_index}
                                   </span>
-                                  <span className={`text-xs px-2 py-1 rounded ${
-                                    entry.core_word ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'
-                                  }`}>
+                                  <span className={`text-xs px-2 py-1 rounded ${entry.core_word ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-700'
+                                    }`}>
                                     {entry.timestamp}
                                   </span>
                                 </div>
@@ -692,13 +687,12 @@ export default function Home() {
                                       <span
                                         key={vIndex}
                                         onClick={() => handleVocabularyClick(vocab)}
-                                        className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg cursor-pointer transition-all ${
-                                          vocab.level === 'C1/C2' 
-                                                ? 'bg-red-100 text-red-800 hover:bg-red-200' 
-                                                : vocab.level === 'B2'
-                                                    ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                                                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                                        }`}
+                                        className={`inline-flex items-center space-x-1 px-2 py-1 rounded-lg cursor-pointer transition-all ${vocab.level === 'C1/C2'
+                                          ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                                          : vocab.level === 'B2'
+                                            ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
+                                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                          }`}
                                       >
                                         <span className="text-xs font-medium">
                                           {vocab.word}
@@ -738,5 +732,9 @@ export default function Home() {
             />
           )}
         </div>
+      </div>
     );
   }
+
+  return null;
+}

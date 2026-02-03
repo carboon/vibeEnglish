@@ -1,9 +1,9 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  testMatch: ['**/__tests__/**/*.test.tsx'],
+  testMatch: ['**/__tests__/**/*.test.tsx', '**/__tests__/**/*.test.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/../$1'
+    '^@/(.*)$': '<rootDir>/$1'
   },
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',

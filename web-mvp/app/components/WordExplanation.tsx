@@ -35,7 +35,7 @@ export default function WordExplanation({
       // 暂时使用模拟数据
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const mockExplanation = {
+      const mockExplanation: Record<string, string> = {
         'plump': 'Having a full, rounded shape or body; well-developed and fleshy.',
         'butterfly': 'A nectar-feeding insect with two pairs of large, typically brightly colored wings.',
         'meadow': 'A piece of grassland, especially one used for hay.',
@@ -85,10 +85,10 @@ export default function WordExplanation({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-         onClick={onClose}>
-      <div 
+      onClick={onClose}>
+      <div
         className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 border-2 border-indigo-200"
-         onClick={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
@@ -158,11 +158,11 @@ export default function WordExplanation({
                 </h4>
                 <ul className="space-y-2">
                   {examples.map((example, index) => (
-                    <li 
+                    <li
                       key={index}
                       className="bg-blue-50 rounded-lg p-3 border border-blue-200 text-gray-700"
                     >
-                      "{example}"
+                      &quot;{example}&quot;
                     </li>
                   ))}
                 </ul>
@@ -175,8 +175,8 @@ export default function WordExplanation({
                 💡 Learning Tip
               </h4>
               <p className="text-sm text-indigo-800">
-                Practice using this word in context. Try to create your own 
-                sentences using "{vocabulary.word}" to reinforce your understanding.
+                Practice using this word in context. Try to create your own
+                sentences using &quot;{vocabulary.word}&quot; to reinforce your understanding.
               </p>
             </div>
           </div>

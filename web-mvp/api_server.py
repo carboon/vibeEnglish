@@ -234,8 +234,8 @@ Write a natural, descriptive narrative sentence for this image.
 
 if __name__ == '__main__':
     print("🚀 VibeEnglish API Server starting...")
-    print("📡 Health check: http://localhost:5000/health")
-    print("📊 Analyze endpoint: http://localhost:5000/analyze")
+    print("📡 Health check: http://localhost:5001/health")
+    print("📊 Analyze endpoint: http://localhost:5001/analyze")
     print("=" * 60)
 
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

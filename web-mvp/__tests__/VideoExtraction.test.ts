@@ -4,7 +4,7 @@
 
 describe('FFmpeg.wasm Video Extraction', () => {
   let ffmpeg: any;
-  
+
   beforeAll(() => {
     // 动态导入（避免在没有 FFmpeg 的环境失败）
     // 实际使用时会正常导入
@@ -19,20 +19,20 @@ describe('FFmpeg.wasm Video Extraction', () => {
     const totalDuration = 60; // 60 秒
     const frameCount = 10;
     const expectedInterval = totalDuration / frameCount;
-    
+
     expect(expectedInterval).toBe(6);
   });
 
   test('formats timestamp correctly', () => {
     const seconds = 125;
-    const expected = '02:05';
-    
+    const expected = '00:02:05';
+
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
+
     const formatted = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    
+
     expect(formatted).toBe(expected);
   });
 
@@ -65,8 +65,8 @@ describe('FFmpeg.wasm Video Extraction', () => {
     const originalWidth = 1920;
     const targetWidth = 1280;
     const scale = targetWidth / originalWidth;
-    
-    expect(scale).toBe(0.666...);
+
+    expect(scale).toBeCloseTo(0.667, 2);
     expect(scale).toBeGreaterThan(0);
     expect(scale).toBeLessThan(1);
   });
@@ -76,12 +76,12 @@ describe('FFmpeg.wasm Video Extraction', () => {
     const height = 720;
     const bytesPerPixel = 4; // RGBA
     const frameCount = 10;
-    
+
     const estimatedMemory = width * height * bytesPerPixel * frameCount;
     const expectedBytes = 1280 * 720 * 4 * 10;
-    
+
     expect(estimatedMemory).toBe(expectedBytes);
-    
+
     // 估算为 ~35MB
     expect(estimatedMemory).toBeLessThan(50 * 1024 * 1024); // < 50MB
   });
@@ -131,10 +131,10 @@ describe('FFmpeg.wasm Video Extraction', () => {
   test('calculates max frame limit safely', () => {
     const largeFrameCount = 100;
     const maxFrames = 20;
-    
+
     const actualFrames = Math.min(largeFrameCount, maxFrames);
     expect(actualFrames).toBe(maxFrames);
   });
 });
 
-export {};
+export { };

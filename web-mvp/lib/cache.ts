@@ -3,7 +3,7 @@
  * 用于存储视频帧和分析结果，避免重复抽帧
  */
 
-import { VideoFrame } from '@/types';
+import { VideoFrame, AnalysisResult } from '@/types';
 
 /**
  * 缓存条目接口
@@ -12,7 +12,7 @@ export interface CacheEntry {
   videoId: string;
   videoName: string;
   frames: VideoFrame[];
-  analysisResult: any; // AnalysisResult
+  analysisResult: AnalysisResult | null; // 分析结果
   timestamp: number; // 缓存时间戳
   duration: number; // 视频时长
   frameCount: number; // 帧数量
@@ -40,7 +40,7 @@ export class CacheManager {
    */
   async initialize(): Promise<void> {
     console.log('🗄️ Initializing IndexedDB...');
-    
+
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(CACHE_CONFIG.DB_NAME, CACHE_CONFIG.DB_VERSION);
 
@@ -52,7 +52,7 @@ export class CacheManager {
       request.onsuccess = () => {
         console.log('✅ IndexedDB initialized successfully');
         this.db = request.result;
-        
+
         // 检查并创建对象存储
         if (!this.db.objectStoreNames.contains(CACHE_CONFIG.STORE_NAME)) {
           this.db.createObjectStore(CACHE_CONFIG.STORE_NAME, {
@@ -61,20 +61,20 @@ export class CacheManager {
           });
           console.log('✅ Created object store:', CACHE_CONFIG.STORE_NAME);
         }
-        
+
         resolve();
       };
 
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-        
+
         if (!db.objectStoreNames.contains(CACHE_CONFIG.STORE_NAME)) {
           console.log('🔧 Creating object store:', CACHE_CONFIG.STORE_NAME);
           const store = db.createObjectStore(CACHE_CONFIG.STORE_NAME, {
             keyPath: 'videoId',
             autoIncrement: true
           });
-          
+
           // 创建索引
           store.createIndex('timestamp', 'timestamp');
           store.createIndex('timestamp_expire', ['timestamp', 'expireAt']);
@@ -155,7 +155,7 @@ export class CacheManager {
 
       request.onsuccess = () => {
         const entry = request.result as CacheEntry | undefined;
-        
+
         if (!entry) {
           console.log('❌ Cache miss for video:', videoFile.name);
           resolve(null);
@@ -187,7 +187,7 @@ export class CacheManager {
    */
   async saveAnalysisResult(
     videoFile: File,
-    analysisResult: any
+    analysisResult: AnalysisResult
   ): Promise<void> {
     await this.initialize();
 
@@ -200,15 +200,15 @@ export class CacheManager {
     return new Promise<void>((resolve, reject) => {
       const transaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
       const store = transaction.objectStore(CACHE_CONFIG.STORE_NAME);
-      
+
       // 先获取现有条目
       const getRequest = store.get(videoId);
 
       getRequest.onsuccess = () => {
         const existingEntry = getRequest.result as CacheEntry | undefined;
-        
+
         let cacheEntry: CacheEntry;
-        
+
         if (existingEntry) {
           // 更新现有条目
           cacheEntry = {
@@ -274,7 +274,7 @@ export class CacheManager {
   /**
    * 从缓存获取分析结果
    */
-  async getAnalysisResult(videoFile: File): Promise<any | null> {
+  async getAnalysisResult(videoFile: File): Promise<AnalysisResult | null> {
     await this.initialize();
 
     if (!this.db) {
@@ -290,7 +290,7 @@ export class CacheManager {
 
       request.onsuccess = () => {
         const entry = request.result as CacheEntry | undefined;
-        
+
         if (!entry || !entry.analysisResult) {
           console.log('❌ No cached analysis result');
           resolve(null);
@@ -352,7 +352,7 @@ export class CacheManager {
       const transaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
       const store = transaction.objectStore(CACHE_CONFIG.STORE_NAME);
       const index = store.index('timestamp');
-      
+
       // 获取所有过期的条目
       const request = index.openCursor(null, IDBKeyRange.lowerBound(expireThreshold));
 
@@ -360,7 +360,7 @@ export class CacheManager {
 
       request.onsuccess = (event) => {
         const cursor = event.target;
-        
+
         cursor.onsuccess = (event) => {
           const entry = event.target.result as CacheEntry;
           if (entry) {
@@ -374,17 +374,17 @@ export class CacheManager {
 
         cursor.oncomplete = () => {
           cursor.close();
-          
+
           // 删除过期条目
           if (expiredKeys.length > 0) {
             console.log(`🧹 Cleaning ${expiredKeys.length} expired cache entries`);
-            
+
             const deleteTransaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
             const deleteStore = deleteTransaction.objectStore(CACHE_CONFIG.STORE_NAME);
-            
+
             expiredKeys.forEach((key, index) => {
               const deleteRequest = deleteStore.delete(key);
-              
+
               deleteRequest.onsuccess = () => {
                 if (index === expiredKeys.length - 1) {
                   console.log('✅ Expired cache cleaned');
@@ -426,17 +426,17 @@ export class CacheManager {
       const transaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
       const store = transaction.objectStore(CACHE_CONFIG.STORE_NAME);
       const index = store.index('timestamp');
-      
+
       // 获取最老的条目
       const request = index.openCursor(null, undefined, 1);
 
       request.onsuccess = (event) => {
         const cursor = event.target;
         const entry = cursor.result as CacheEntry;
-        
+
         if (entry) {
           console.log('🗑️ Removing oldest cache entry:', entry.videoName);
-          
+
           const deleteTransaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
           const deleteStore = deleteTransaction.objectStore(CACHE_CONFIG.STORE_NAME);
           const deleteRequest = deleteStore.delete(entry.videoId);
@@ -535,4 +535,5 @@ export class CacheManager {
       this.db = null;
       console.log('🔌 IndexedDB closed');
     }
+  }
 }

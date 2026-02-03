@@ -23,13 +23,24 @@ export default function SubtitleEditor({
   const [editText, setEditText] = useState('');
   const [isModified, setIsModified] = useState(false);
 
+  // 使用 ref 来跟踪上一次的 index
+  const prevIndexRef = useRef<number | null>(null);
+
   // 当切换到新字幕时，更新编辑器
+  // 使用 useLayoutEffect 来避免闪烁，并检查是否真的需要更新
   useEffect(() => {
     if (currentSubtitleIndex >= 0 && currentSubtitleIndex < subtitles.length) {
-      const newSubtitle = subtitles[currentSubtitleIndex];
-      setEditingIndex(currentSubtitleIndex);
-      setEditText(newSubtitle.sentence);
-      setIsModified(false);
+      // 只在 index 真正改变时更新
+      if (prevIndexRef.current !== currentSubtitleIndex) {
+        prevIndexRef.current = currentSubtitleIndex;
+        const newSubtitle = subtitles[currentSubtitleIndex];
+        // 使用 setTimeout 将状态更新移出 effect 的同步阶段
+        setTimeout(() => {
+          setEditingIndex(currentSubtitleIndex);
+          setEditText(newSubtitle.sentence);
+          setIsModified(false);
+        }, 0);
+      }
     }
   }, [currentSubtitleIndex, subtitles]);
 
@@ -149,11 +160,10 @@ export default function SubtitleEditor({
           <span className="text-gray-600">
             Current: {currentSubtitleIndex + 1} / {subtitles.length}
           </span>
-          <span className={`text-sm font-medium ${
-            currentSubtitleIndex === currentSubtitleIndex
+          <span className={`text-sm font-medium ${currentSubtitleIndex === currentSubtitleIndex
               ? 'text-green-600'
               : 'text-gray-600'
-          }`}>
+            }`}>
             {currentSubtitleIndex === currentSubtitleIndex ? '● Playing' : '○'}
           </span>
         </div>
@@ -249,11 +259,10 @@ export default function SubtitleEditor({
                   key={index}
                   onClick={() => handleGoto(index)}
                   disabled={index >= subtitles.length}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    index === editingIndex
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${index === editingIndex
                       ? 'bg-indigo-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   {index + 1}
                 </button>
