@@ -32,7 +32,7 @@ async function analyzeSingleFrame(
   attempt: number = 0
 ): Promise<any> {
   const apiUrl = process.env.API_URL || 'http://localhost:5000/analyze-frame';
-  
+
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -78,7 +78,7 @@ async function analyzeSingleFrame(
 
     // 最后一次失败后返回 null
     console.error(`Frame ${frameIndex} failed after ${PARALLEL_CONFIG.RETRY_ATTEMPTS} attempts:`, error);
-    
+
     // 返回默认结果，避免阻塞整个批处理
     return {
       frame_index: frameIndex,
@@ -275,37 +275,39 @@ export async function POST(request: NextRequest) {
       };
 
     } else {
-      // 串行模式：一个接一个处理
-      const allResults: any[] = [];
-      let previousSentence = '';
+      // 串行模式：直接调用 Python 后端的批量 API
+      const pythonApiUrl = process.env.PYTHON_API_URL || 'http://localhost:5001/analyze';
 
-      for (let i = 0; i < framesToAnalyze.length; i++) {
-        // 这里应该调用 Python 进行分析
-        // 暂时使用模拟结果
-        console.log(`Processing frame ${i + 1}/${framesToAnalyze.length}...`);
+      console.log(`🔄 Sending ${framesToAnalyze.length} frames to Python backend at ${pythonApiUrl}`);
 
-        const mockResult = {
-          frame_index: i,
-          timestamp: `${Math.floor(i * 2).toString().padStart(2, '0')}:${(i * 2 % 60).toString().padStart(2, '0')}`,
-          sentence: `Sample ${style} narrative for frame ${i}`,
-          advanced_vocabulary: [],
-          core_word: '',
-          vocabulary_count: 0
-        };
+      const pythonResponse = await fetch(pythonApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          frames: framesToAnalyze,
+          use_sliding_window: useSlidingWindow
+        }),
+        signal: AbortSignal.timeout(120000) // 120 秒超时
+      });
 
-        if (mockResult.sentence) {
-          previousSentence = mockResult.sentence;
-        }
+      if (!pythonResponse.ok) {
+        const errorText = await pythonResponse.text();
+        throw new Error(`Python backend error ${pythonResponse.status}: ${errorText}`);
+      }
 
-        allResults.push(mockResult);
+      const pythonResult = await pythonResponse.json();
+
+      if (pythonResult.error) {
+        throw new Error(`Python backend error: ${pythonResult.error}`);
       }
 
       // 构建结果
       result = {
-        video_narrative: allResults,
-        mode: useSlidingWindow ? 'sliding_window' : 'sequential',
+        video_narrative: pythonResult.video_narrative || [],
+        mode: useSlidingWindow ? 'sliding_window' : 'normal',
         total_frames: framesToAnalyze.length,
-        style: style
       };
     }
 

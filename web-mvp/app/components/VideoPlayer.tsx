@@ -135,7 +135,7 @@ export default function VideoPlayer({
   }
 
   return (
-    <div className="bg-black rounded-xl overflow-hidden shadow-2xl">
+    <div className="relative bg-black rounded-xl overflow-hidden shadow-2xl">
       {/* 视频元素 */}
       <video
         ref={videoRef}

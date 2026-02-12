@@ -69,15 +69,15 @@ export function resultToSRT(result: AnalysisResult, frameDuration: number = 2.0,
 
   narratives.forEach((entry, index) => {
     const id = index + 1;
-    const startTime = entry.timestamp;
 
     // 根据风格调整句子
     const adjustedSentence = adjustSentenceByStyle(entry.sentence, style || 'casual');
 
-    // 计算结束时间（当前帧开始时间 + 帧时长）
-    const startSeconds = timestampToSeconds(startTime);
+    // 使用帧索引和帧时长计算正确的时间，不依赖后端的时间戳
+    const startSeconds = index * frameDuration;
     const endSeconds = startSeconds + frameDuration;
-    const endTime = formatSRTTime(endSeconds, false);
+    const startTime = formatSRTTime(startSeconds, true);
+    const endTime = formatSRTTime(endSeconds, true);
 
     // 清理句子文本（移除多余的引号）
     const text = adjustedSentence

@@ -4,7 +4,7 @@
  */
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { toBlobURL } from '@ffmpeg/util';
+import { toBlobURL, fetchFile } from '@ffmpeg/util';
 import { VideoFrame } from '@/types';
 
 // Re-export VideoFrame for convenience
@@ -22,15 +22,10 @@ export class VideoProcessor {
     try {
       this.ffmpeg = new FFmpeg();
 
-      // 加载 FFmpeg 核心文件
-      const coreURL = await toBlobURL(
-        new Uint8Array(
-          await (
-            await fetch('https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js')
-          ).arrayBuffer()
-        ),
-        'video/mp4'
-      );
+      // 加载 FFmpeg 核心文件 (使用 CDN)
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+      const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
+      const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
 
       this.ffmpeg.on('log', ({ message }) => {
         console.log('FFmpeg:', message);
@@ -42,6 +37,7 @@ export class VideoProcessor {
 
       await this.ffmpeg.load({
         coreURL,
+        wasmURL,
       });
 
       this.loaded = true;
@@ -57,50 +53,26 @@ export class VideoProcessor {
    * 获取视频时长（秒）
    */
   async getVideoDuration(videoFile: File): Promise<number> {
-    await this.initialize();
+    // 使用浏览器原生 <video> 元素获取时长（比 FFmpeg 更可靠）
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
 
-    if (!this.ffmpeg) {
-      throw new Error('FFmpeg not initialized');
-    }
-
-    // 写入视频文件
-    const inputName = 'input.mp4';
-    await this.ffmpeg.writeFile(inputName, await fetchFile(videoFile));
-
-    // 使用 ffprobe 获取视频信息
-    try {
-      const result = await this.ffmpeg.exec([
-        '-i',
-        inputName,
-        '-f',
-        'null',
-        '-',
-        'show_entries',
-        '-',
-        'of_format',
-        'json',
-        '-',
-      ]);
-
-      // 解析输出
-      const output = result;
-      const duration = output?.format?.duration;
-
-      if (duration && typeof duration === 'number') {
+      video.onloadedmetadata = () => {
+        const duration = video.duration;
+        URL.revokeObjectURL(video.src);
         console.log(`📊 Video duration: ${duration.toFixed(2)}s`);
-        return duration;
-      }
+        resolve(duration);
+      };
 
-      console.error('Failed to get video duration');
-      return 0;
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        console.error('Failed to get video duration');
+        reject(new Error('Failed to load video metadata'));
+      };
 
-    } catch (error) {
-      console.error('Error getting video duration:', error);
-      return 0;
-    } finally {
-      // 清理临时文件
-      await this.ffmpeg.deleteFile(inputName);
-    }
+      video.src = URL.createObjectURL(videoFile);
+    });
   }
 
   /**
@@ -123,24 +95,23 @@ export class VideoProcessor {
 
     console.log(`🎬 Extracting ${frameCount} frames from video...`);
 
-    // 写入视频文件
+    // 先用浏览器获取时长（不依赖 FFmpeg 虚拟文件系统）
+    const duration = await this.getVideoDuration(videoFile);
+
+    // 写入视频文件到 FFmpeg 虚拟文件系统
     const inputName = 'input.mp4';
     await this.ffmpeg.writeFile(inputName, await fetchFile(videoFile));
 
-    // 获取视频时长
-    const duration = await this.getVideoDuration(videoFile);
     const interval = duration / frameCount;
 
     console.log(`⏱️  Frame interval: ${interval.toFixed(2)}s (${duration.toFixed(2)}s / ${frameCount} frames)`);
 
     const frames: VideoFrame[] = [];
-    const frameNames: string[] = [];
 
     // 提取帧
     for (let i = 0; i < frameCount; i++) {
       const timestamp = i * interval;
       const frameName = `frame_${String(i).padStart(6, '0')}.jpg`;
-      frameNames.push(frameName);
 
       // 抽取帧
       await this.ffmpeg.exec([
@@ -159,8 +130,9 @@ export class VideoProcessor {
 
       // 读取帧数据
       const frameData = await this.ffmpeg.readFile(frameName);
+      const uint8Data = frameData instanceof Uint8Array ? frameData : new TextEncoder().encode(frameData as string);
       const imageUrl = URL.createObjectURL(
-        new Blob([frameData.buffer], { type: 'image/jpeg' })
+        new Blob([new Uint8Array(uint8Data)], { type: 'image/jpeg' })
       );
 
       frames.push({

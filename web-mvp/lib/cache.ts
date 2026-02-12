@@ -353,61 +353,32 @@ export class CacheManager {
       const store = transaction.objectStore(CACHE_CONFIG.STORE_NAME);
       const index = store.index('timestamp');
 
-      // 获取所有过期的条目
-      const request = index.openCursor(null, IDBKeyRange.lowerBound(expireThreshold));
-
-      const expiredKeys: string[] = [];
+      // 获取所有 timestamp <= expireThreshold 的条目（即过期的）
+      const range = IDBKeyRange.upperBound(expireThreshold);
+      const request = index.openCursor(range);
+      let deletedCount = 0;
 
       request.onsuccess = (event) => {
-        const cursor = event.target;
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
 
-        cursor.onsuccess = (event) => {
-          const entry = event.target.result as CacheEntry;
-          if (entry) {
-            expiredKeys.push(entry.videoId);
+        if (cursor) {
+          // 当前条目已过期，删除它
+          console.log(`🧹 Deleting expired entry: ${cursor.value.videoName}`);
+          cursor.delete();
+          deletedCount++;
+          cursor.continue(); // 移动到下一条
+        } else {
+          // 没有更多条目了
+          if (deletedCount > 0) {
+            console.log(`✅ Cleaned ${deletedCount} expired cache entries`);
           }
-        };
-
-        cursor.onerror = () => {
-          cursor.continue();
-        };
-
-        cursor.oncomplete = () => {
-          cursor.close();
-
-          // 删除过期条目
-          if (expiredKeys.length > 0) {
-            console.log(`🧹 Cleaning ${expiredKeys.length} expired cache entries`);
-
-            const deleteTransaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
-            const deleteStore = deleteTransaction.objectStore(CACHE_CONFIG.STORE_NAME);
-
-            expiredKeys.forEach((key, index) => {
-              const deleteRequest = deleteStore.delete(key);
-
-              deleteRequest.onsuccess = () => {
-                if (index === expiredKeys.length - 1) {
-                  console.log('✅ Expired cache cleaned');
-                  resolve();
-                }
-              };
-
-              deleteRequest.onerror = (err) => {
-                console.error('Failed to delete expired entry:', err);
-                if (index === expiredKeys.length - 1) {
-                  resolve(); // 即使部分失败也继续
-                }
-              };
-            });
-          } else {
-            resolve();
-          }
-        };
-
-        request.onerror = () => {
-          console.error('Failed to clean expired cache:', request.error);
           resolve();
-        };
+        }
+      };
+
+      request.onerror = () => {
+        console.error('Failed to clean expired cache:', request.error);
+        resolve(); // 即使失败也继续
       };
     });
   }
@@ -427,35 +398,19 @@ export class CacheManager {
       const store = transaction.objectStore(CACHE_CONFIG.STORE_NAME);
       const index = store.index('timestamp');
 
-      // 获取最老的条目
-      const request = index.openCursor(null, undefined, 1);
+      // 按 timestamp 升序打开游标，第一条就是最旧的
+      const request = index.openCursor();
 
       request.onsuccess = (event) => {
-        const cursor = event.target;
-        const entry = cursor.result as CacheEntry;
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
 
-        if (entry) {
+        if (cursor) {
+          const entry = cursor.value as CacheEntry;
           console.log('🗑️ Removing oldest cache entry:', entry.videoName);
-
-          const deleteTransaction = this.db!.transaction([CACHE_CONFIG.STORE_NAME], 'readwrite');
-          const deleteStore = deleteTransaction.objectStore(CACHE_CONFIG.STORE_NAME);
-          const deleteRequest = deleteStore.delete(entry.videoId);
-
-          deleteRequest.onsuccess = () => {
-            cursor.close();
-            console.log('✅ Oldest cache entry removed');
-            resolve();
-          };
-
-          deleteRequest.onerror = (err) => {
-            console.error('Failed to delete oldest entry:', err);
-            cursor.close();
-            resolve();
-          };
-        } else {
-          cursor.close();
-          resolve();
+          cursor.delete();
+          console.log('✅ Oldest cache entry removed');
         }
+        resolve();
       };
 
       request.onerror = () => {
